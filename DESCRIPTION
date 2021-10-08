@@ -1,0 +1,32 @@
+Package: apatfa
+Title: Generates APA Tables, Figures, and Appendix Sections
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Todd",
+           family = "Goodrich",
+           role = c("aut", "cre"),
+           email = "toddagood@gmail.com")
+Description: Generates an output Word file (docx) containing bookmarked
+    content (tables, figures, and appendices) numbered and organized
+    in APA style sections.  In each output section, the content is ordered
+    by the first reference to the content within an input Word file.  The
+    output file is designed to be included into the input file using
+    a Word field {INCLUDETEXT "output_file.docx"} so that bookmarks
+    in the output file can be referenced from the input file.
+License: GPL (>= 3)
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
+Imports: 
+    extrafont,
+    flextable,
+    grDevices,
+    officer,
+    purrr,
+    rsvg,
+    stats,
+    stringr,
+    tools,
+    utils,
+    xml2
