@@ -403,8 +403,19 @@ rotate_header <- function(x, rotation = "tbrl", align = "right") {
 #' @export
 autofit_width <- function(x, part = c("body", "header")) {
   stopifnot(inherits(x, "flextable"))
-  w <- flextable::dim_pretty(x, part = part)$widths
-  flextable::width(x, width = w)
+  if (!inherits(x$body$dataset, "grouped_data")) {
+    info <- flextable::dim_pretty(x, part = part)
+  } else {
+    spanner <- names(x$body$dataset)[[1]]
+    is_spanner <- stats::formula(paste("~ !is.na(", spanner, ")"))
+    y <- flextable::mk_par(x, i = is_spanner, j=1, part="body",
+                           value = flextable::as_paragraph(""))
+    y <- flextable::mk_par(y, i = NULL, j = 1, part = "header",
+             value = flextable::as_paragraph(x$col_keys[[1]]))
+    info <- flextable::dim_pretty(y, part = part)
+  }
+
+  flextable::width(x, width = info$widths)
 }
 
 #' Adds a flextable
