@@ -2,6 +2,11 @@
 #' @export
 init_tfas <- identity # Stubbed function
 
+#' Gets a tfa
+#' @param bookmark Bookmark of the table, figure, or appendix
+#' @export
+get_tfa <- identify # Stubbed function
+
 # Functions to set and get the tfas.
 set_tfas <- get_tfas <- identity # Stubbed functions
 
@@ -24,6 +29,10 @@ set_tfas <- get_tfas <- identity # Stubbed functions
   # Gets the tfas
   get_tfas <<- function() {
     tfas
+  }
+  # Gets a tfa
+  get_tfa <<- function(bookmark) {
+    tfas[[bookmark]]
   }
 })()
 
@@ -75,10 +84,12 @@ theme_apa <- function (x) {
       cnt <- purrr::map_int(x$body$content[[1]]$data[,x$col_keys[[j]]],
                             function(d) nchar(d[["txt"]]))
       p <- x$body$styles$pars$padding.left$data[,x$col_keys[[j]]]
-      # The padding coefficient only works for 12pt.
-      p <- 5.4 * (max(cnt) - cnt) + p
-      x <<- flextable::padding(x, j = x$col_keys[[j]],
-                               padding.left = p, part = "body")
+      if (min(p) == max(p)) {
+        # The padding coefficient only works for 12pt.
+        p <- 5.4 * (max(cnt) - cnt) + p
+        x <<- flextable::padding(x, j = x$col_keys[[j]],
+                                 padding.left = p, part = "body")
+      }
     })
   }
   flextable::fix_border_issues(x)
@@ -300,9 +311,9 @@ begin_figure <- function(bookmark,
                          reserve = 0,
                          notes = NULL) {
   portrait_width <- 6.5
-  portrait_height <- 9.0
+  portrait_height <- 7.0
   landscape_width <- 9.0
-  landscape_height <- 6.5
+  landscape_height <- 7.0
   if (is.null(width)) {
     width <- if (wide) landscape_width else portrait_width
   }
@@ -398,24 +409,54 @@ rotate_header <- function(x, rotation = "tbrl", align = "right") {
 #' Fits the column widths of a flextable using dim_pretty
 #'
 #' @param x A flextable
-#' @param part The part of the table to use for measuring pretty widths
+#' @param body_only Only use the body for measuring pretty widths
 #' @return A flextable
 #' @export
-autofit_width <- function(x, part = c("body", "header")) {
+#'
+#' @importFrom rlang .data
+autofit_width <- function(x, body_only = FALSE) {
   stopifnot(inherits(x, "flextable"))
   if (!inherits(x$body$dataset, "grouped_data")) {
-    info <- flextable::dim_pretty(x, part = part)
+    wb <- flextable::dim_pretty(x, part = "body")$widths
   } else {
+    # Account for the table spanner.
     spanner <- names(x$body$dataset)[[1]]
     is_spanner <- stats::formula(paste("~ !is.na(", spanner, ")"))
     y <- flextable::mk_par(x, i = is_spanner, j=1, part="body",
                            value = flextable::as_paragraph(""))
     y <- flextable::mk_par(y, i = NULL, j = 1, part = "header",
-             value = flextable::as_paragraph(x$col_keys[[1]]))
-    info <- flextable::dim_pretty(y, part = part)
+                           value = flextable::as_paragraph(y$col_keys[[1]]))
+    wb <- flextable::dim_pretty(y, part = "body")$widths
   }
 
-  flextable::width(x, width = info$widths)
+  if (body_only) {
+    return(flextable::width(x, width = wb))
+  }
+
+  df <- data.frame(wb = wb)
+  h_nrow <- flextable::nrow_part(x, "header")
+  if (h_nrow == 1) {
+    df$wh <- flextable::dim_pretty(x, part = "header")$widths
+    df$w <- pmax(df$wb, df$wh)
+  } else {
+    # Account for spanned headers.
+    j <- grep("\\.", x$col_keys)
+    df$wx <- flextable::dim_pretty(x, part = "header")$widths
+    y <- flextable::mk_par(x, i = 1, j = j, part = "header",
+                           value = flextable::as_paragraph(""))
+    df$wy <- flextable::dim_pretty(y, part = "header")$widths
+    df$grp <- gsub("^([^\\.]*).*", "\\1", x$col_keys)
+    df <- dplyr::group_by(df, .data$grp)
+    df <- dplyr::mutate(df, sy = sum(.data$wy),
+                        cnt = length(.data$wy),
+                        fx = dplyr::first(.data$wx))
+    df <- dplyr::ungroup(df)
+    df$wh <- dplyr::if_else(df$fx <= df$sy, df$wy,
+                            df$wy + (df$fx - df$sy) / df$cnt)
+    df$w <- pmax(df$wb, df$wh)
+  }
+
+  flextable::width(x, width = df$w)
 }
 
 #' Adds a flextable
