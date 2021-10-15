@@ -19,11 +19,13 @@ LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
 Imports: 
+    dplyr,
     extrafont,
     flextable,
     grDevices,
     officer,
     purrr,
+    rlang,
     rsvg,
     stats,
     stringr,
