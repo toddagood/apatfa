@@ -4,12 +4,12 @@
 \alias{autofit_width}
 \title{Fits the column widths of a flextable using dim_pretty}
 \usage{
-autofit_width(x, part = c("body", "header"))
+autofit_width(x, body_only = FALSE)
 }
 \arguments{
 \item{x}{A flextable}
 
-\item{part}{The part of the table to use for measuring pretty widths}
+\item{body_only}{Only use the body for measuring pretty widths}
 }
 \value{
 A flextable
