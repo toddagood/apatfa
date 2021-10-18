@@ -81,13 +81,17 @@ theme_apa <- function (x) {
     ds <- x$body$dataset[x$col_keys]
     which_j <- which(sapply(ds, function(x) is.numeric(x)))
     purrr::walk(which_j, function(j) {
-      cnt <- purrr::map_int(x$body$content[[1]]$data[,x$col_keys[[j]]],
-                            function(d) nchar(d[["txt"]]))
+      content <- x$body$content[[1]]$data[,x$col_keys[[j]]]
+      cnt <- purrr::map_int(content, function(d) nchar(d[["txt"]]))
+      num <- purrr::map_lgl(content, function(d) grepl("^[-0-9]", d[["txt"]]))
+      i <- which(num)
       p <- x$body$styles$pars$padding.left$data[,x$col_keys[[j]]]
+      p <- p[i]
+      cnt <- cnt[i]
       if (min(p) == max(p)) {
         # The padding coefficient only works for 12pt.
         p <- 5.4 * (max(cnt) - cnt) + p
-        x <<- flextable::padding(x, j = x$col_keys[[j]],
+        x <<- flextable::padding(x, i = i, j = x$col_keys[[j]],
                                  padding.left = p, part = "body")
       }
     })
