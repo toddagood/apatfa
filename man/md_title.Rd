@@ -7,7 +7,10 @@
 md_title(...)
 }
 \arguments{
-\item{...}{Markdown content}
+\item{...}{markdown content}
+}
+\value{
+an officer::block_list of paragraphs
 }
 \description{
 Creates a title from markdown.

@@ -7,7 +7,10 @@
 md_notes(...)
 }
 \arguments{
-\item{...}{Markdown content}
+\item{...}{markdown content}
+}
+\value{
+an officer::block_list of paragraphs
 }
 \description{
 Creates notes from markdown.

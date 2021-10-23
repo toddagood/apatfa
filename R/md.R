@@ -22,11 +22,12 @@ md_to_xml <- function(x) {
   paste0(c("<body xml:space=\"preserve\">", x, "</body>"), collapse="")
 }
 
-update_b <- function(x) officer::ftext(x$value, stats::update(x$p, bold=TRUE))
-update_i <- function(x) officer::ftext(x$value, stats::update(x$p, italic=TRUE))
-update_v <- function(x, v) officer::ftext(x$value, stats::update(x$p, vertical.align=v))
-
-
+update_b <-
+  function(x) officer::ftext(x$value, stats::update(x$p, bold=TRUE))
+update_i <-
+  function(x) officer::ftext(x$value, stats::update(x$p, italic=TRUE))
+update_v <-
+  function(x, v) officer::ftext(x$value, stats::update(x$p, vertical.align=v))
 
 to_fpar <- function(node, prop) {
   if (xml2::xml_name(node) == "text") {
@@ -61,7 +62,8 @@ md_pars <- function(..., prop) {
 
 #' Creates a title from markdown.
 #'
-#' @param ... Markdown content
+#' @param ... markdown content
+#' @return an officer::block_list of paragraphs
 #' @export
 md_title <- function(...) {
   defaults <- flextable::get_flextable_defaults()
@@ -73,7 +75,8 @@ md_title <- function(...) {
 
 #' Creates notes from markdown.
 #'
-#' @param ... Markdown content
+#' @param ... markdown content
+#' @return an officer::block_list of paragraphs
 #' @export
 md_notes <- function(...) {
   defaults <- flextable::get_flextable_defaults()

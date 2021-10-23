@@ -99,17 +99,35 @@ theme_apa <- function (x) {
   flextable::fix_border_issues(x)
 }
 
-#' Sets flextable defaults for APA style tables
+#' Sets APA style defaults for flextable and ggplot2
 #'
-#' @param ... Args to pass to set_flextable_defaults()
-#' @return A list containing the previous default values
+#' @param digits significant digits for tables
+#' @param na_str string to be used for NA values in tables
+#' @param nan_str string to be used for NaN values in tables
+#' @param fig_theme additional ggplot2::theme settings for figures
+#' @param ... args to pass to set_flextable_defaults()
 #' @export
-set_apa_defaults <- function(...) {
+set_apa_defaults <- function(digits = 2,
+                             na_str = "NA",
+                             nan_str = "NaN",
+                             fig_theme = ggplot2::theme(),
+                             ...) {
   flextable::set_flextable_defaults(theme_fun = theme_apa,
                                     font.family = "Times New Roman",
                                     font.size = 12,
                                     line_spacing = 2,
-                                    text.align = "center", ...)
+                                    text.align = "center",
+                                    digits = digits,
+                                    na_str = na_str,
+                                    nan_str = nan_str,
+                                    ...)
+  fig_theme <-
+    ggplot2::theme_minimal(base_size = 12, base_family = "Arial") +
+    ggplot2::theme(panel.spacing.y = ggplot2::unit(12, "points"),
+                   panel.border = ggplot2::element_rect(fill = NA)) +
+    fig_theme
+  ggplot2::theme_set(fig_theme)
+  return()
 }
 
 end_portrait <- function (x) {
@@ -498,4 +516,30 @@ add_appendix <- function(bookmark, fun, wide = FALSE) {
   tfas[[bookmark]] <- obj
   set_tfas(tfas)
   return()
+}
+
+#' Adds markdown content as paragraphs with style = "Normal"
+#'
+#' @param x the rdocx document
+#' @param ... markdown content
+#' @return the rdocx document
+#' @export
+add_md_normal <- function(x, ...) {
+  for(para in md_notes(...)) {
+    x <- officer::body_add_fpar(x, para, style = "Normal")
+  }
+  return(x)
+}
+
+#' Adds the text of a code file in a mono 10pt font, single-spaced
+#'
+#' @param x the rdocx document
+#' @param file_name the name of the code file
+#' @return the rdocx document
+#' @export
+add_code_file <- function(x, file_name) {
+  fp_t <- officer::fp_text(font.family = "Courier New", font.size = 10)
+  txt <- readr::read_lines(file_name, lazy = FALSE)
+  paras <- purrr::map(txt, officer::fpar, fp_t = fp_t)
+  officer::body_add_blocks(x, do.call(officer::block_list, paras))
 }

@@ -2,16 +2,27 @@
 % Please edit documentation in R/apatfa.R
 \name{set_apa_defaults}
 \alias{set_apa_defaults}
-\title{Sets flextable defaults for APA style tables}
+\title{Sets APA style defaults for flextable and ggplot2}
 \usage{
-set_apa_defaults(...)
+set_apa_defaults(
+  digits = 2,
+  na_str = "NA",
+  nan_str = "NaN",
+  fig_theme = ggplot2::theme(),
+  ...
+)
 }
 \arguments{
-\item{...}{Args to pass to set_flextable_defaults()}
-}
-\value{
-A list containing the previous default values
+\item{digits}{significant digits for tables}
+
+\item{na_str}{string to be used for NA values in tables}
+
+\item{nan_str}{string to be used for NaN values in tables}
+
+\item{fig_theme}{additional ggplot2::theme settings for figures}
+
+\item{...}{args to pass to set_flextable_defaults()}
 }
 \description{
-Sets flextable defaults for APA style tables
+Sets APA style defaults for flextable and ggplot2
 }
