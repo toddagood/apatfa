@@ -123,7 +123,7 @@ set_apa_defaults <- function(digits = 2,
                                     ...)
   fig_theme <-
     ggplot2::theme_minimal(base_size = 12, base_family = "Arial") +
-    ggplot2::theme(panel.spacing.y = ggplot2::unit(12, "points"),
+    ggplot2::theme(panel.spacing = ggplot2::unit(12, "points"),
                    panel.border = ggplot2::element_rect(fill = NA)) +
     fig_theme
   ggplot2::theme_set(fig_theme)
