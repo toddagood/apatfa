@@ -345,12 +345,14 @@ begin_figure <- function(bookmark,
   height <- height - reserve
   fig_dir <- "./Figures"
   dir.create(fig_dir, showWarnings = FALSE)
-  svg_file <- tempfile(tmpdir = fig_dir, fileext = ".svg")
+  svg_file <- file.path(fig_dir, paste0(bookmark, ".svg"))
+  meta_file <- file.path(fig_dir, paste0(bookmark, ".meta"))
   svg_file <- normalizePath(svg_file, "/", mustWork = FALSE)
   grDevices::svg(svg_file, width = width, height = height)
   extrafont::loadfonts(device = "win", quiet = TRUE)
   obj <- list(title = title, wide = wide, notes = notes,
               img = svg_file, width = width, height = height)
+  save(obj, file = meta_file)
   tfas <- get_tfas()
   tfas[[bookmark]] <- obj
   set_tfas(tfas)
@@ -409,6 +411,24 @@ add_figure <- function(fig, bookmark, title, wide = FALSE, width = NULL,
     }
   }
   return(fig)
+}
+
+#' Loads a figure
+#'
+#' @param bookmark Bookmark of the figure
+#' @return The figure
+#' @export
+load_figure <- function(bookmark) {
+  fig_dir <- "./Figures"
+  meta_file <- file.path(fig_dir, paste0(bookmark, ".meta"))
+  if (!file.exists(meta_file)) {
+    stop("File not found: ", meta_file)
+  }
+  load(meta_file)
+  tfas <- get_tfas()
+  tfas[[bookmark]] <- obj
+  set_tfas(tfas)
+  return()
 }
 
 #' Rotates and aligns the header of a flextable
@@ -494,11 +514,34 @@ add_table <- function(x, bookmark, title, notes = NULL, wide = FALSE) {
   if (!inherits(x, "flextable")) {
     stop("add_table supports only flextable objects.")
   }
+  table_dir <- "./Tables"
+  dir.create(table_dir, showWarnings = FALSE)
+  meta_file <- file.path(table_dir, paste0(bookmark, ".meta"))
   obj <- list(title = title, notes = notes, wide = wide, ft = x)
+  save(obj, file = meta_file)
   tfas <- get_tfas()
   tfas[[bookmark]] <- obj
   set_tfas(tfas)
   return(x)
+}
+
+#' Loads a flextable
+#'
+#' @param bookmark Bookmark of the table
+#' @return A flextable
+#' @export
+load_table <- function(bookmark) {
+  table_dir <- "./Tables"
+  dir.create(table_dir, showWarnings = FALSE)
+  meta_file <- file.path(table_dir, paste0(bookmark, ".meta"))
+  if (!file.exists(meta_file)) {
+    stop("File not found: ", meta_file)
+  }
+  load(meta_file)
+  tfas <- get_tfas()
+  tfas[[bookmark]] <- obj
+  set_tfas(tfas)
+  return(obj$ft)
 }
 
 #' Adds an appendix
