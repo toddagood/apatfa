@@ -104,12 +104,14 @@ theme_apa <- function (x) {
 #' @param digits significant digits for tables
 #' @param na_str string to be used for NA values in tables
 #' @param nan_str string to be used for NaN values in tables
+#' @param fmt_datetime format string for datatime values
 #' @param fig_theme additional ggplot2::theme settings for figures
 #' @param ... args to pass to set_flextable_defaults()
 #' @export
 set_apa_defaults <- function(digits = 2,
                              na_str = "NA",
                              nan_str = "NaN",
+                             fmt_datetime = "%Y-%m-%d %H:%M:%S %Z",
                              fig_theme = ggplot2::theme(),
                              ...) {
   flextable::set_flextable_defaults(theme_fun = theme_apa,
@@ -120,11 +122,18 @@ set_apa_defaults <- function(digits = 2,
                                     digits = digits,
                                     na_str = na_str,
                                     nan_str = nan_str,
+                                    fmt_datetime = fmt_datetime,
                                     ...)
   fig_theme <-
     ggplot2::theme_minimal(base_size = 12, base_family = "Arial") +
-    ggplot2::theme(panel.spacing = ggplot2::unit(12, "points"),
-                   panel.border = ggplot2::element_rect(fill = NA)) +
+    ggplot2::theme(axis.title = ggplot2::element_text(face = "bold.italic"),
+                   panel.spacing = ggplot2::unit(12, "points"),
+                   panel.border = ggplot2::element_rect(fill = NA),
+                   legend.direction = "horizontal",
+                   legend.position = "top",
+                   legend.text = ggplot2::element_text(family = "Courier New"),
+                   legend.title = ggplot2::element_text(face = "bold.italic"),
+                   strip.text = ggplot2::element_text(family = "Courier New")) +
     fig_theme
   ggplot2::theme_set(fig_theme)
   return()

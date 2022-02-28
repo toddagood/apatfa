@@ -8,6 +8,7 @@ set_apa_defaults(
   digits = 2,
   na_str = "NA",
   nan_str = "NaN",
+  fmt_datetime = "\%Y-\%m-\%d \%H:\%M:\%S \%Z",
   fig_theme = ggplot2::theme(),
   ...
 )
@@ -18,6 +19,8 @@ set_apa_defaults(
 \item{na_str}{string to be used for NA values in tables}
 
 \item{nan_str}{string to be used for NaN values in tables}
+
+\item{fmt_datetime}{format string for datatime values}
 
 \item{fig_theme}{additional ggplot2::theme settings for figures}
 
