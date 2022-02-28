@@ -488,7 +488,6 @@ StamenAttribution <- function(x, y, size = 3) {
 #' @param img An image, such as from png::readPNG
 #' @return A ggplot of the image
 #' @export
-###########################################################################
 ggimg <- function(img) {
   rg <- rasterGrob(img)
   h <- dim(rg$raster)[1]
