@@ -17,19 +17,23 @@
 #' @return A list of style elements
 #' @export
 get_styles <- function() {
-  list(italic.cols = c(),
-       mono.cols = c(),
-       mono.fontname = "Courier New",
-       mono.fontsize = 12,
-       mono.fontsize.geom_text = 12 * 0.3,
-       mono = element_text(family = "Courier New"),
-       bold = element_text(face = "bold"),
-       bold.italic = element_text(face = "bold.italic"),
-       italic = element_text(face = "italic"),
-       plain = element_text(family = "Arial", face = "plain"),
-       colors.yes_no_na = c("Yes" = "#4DB6D0", "No" = "#D9717D",
-                            "NA" = "grey"),
-       colors.true_false = c("TRUE" = "blue", "FALSE" = "red")
+  list(
+    italic.cols = c(),
+    mono.cols = c(),
+    mono.fontname = "Courier New",
+    mono.fontsize = 12,
+    mono.fontsize.geom_text = 12 * 0.3,
+    mono = element_text(family = "Courier New"),
+    bold = element_text(face = "bold"),
+    bold.italic = element_text(face = "bold.italic"),
+    italic = element_text(face = "italic"),
+    plain = element_text(family = "Arial", face = "plain"),
+    colors.yes_no_na = c(
+      "Yes" = "#4DB6D0",
+      "No" = "#D9717D",
+      "NA" = "grey"
+    ),
+    colors.true_false = c("TRUE" = "blue", "FALSE" = "red")
   )
 }
 
@@ -43,8 +47,8 @@ get_styles <- function() {
 #' @return Updated styles
 #' @export
 add_styling <- function(styles, df) {
-  factor_cols <- df %>% keep(~ is.factor(.)) %>% names()
-  logical_cols <- df %>% keep(~ is.logical(.)) %>% names()
+  factor_cols <- df %>% keep( ~ is.factor(.)) %>% names()
+  logical_cols <- df %>% keep( ~ is.logical(.)) %>% names()
   styles$italic.cols <- unique(c(styles$italic.cols, names(df)))
   styles$mono.cols <- unique(c(styles$mono.cols,
                                factor_cols, logical_cols))
@@ -58,10 +62,15 @@ add_styling <- function(styles, df) {
 #' @param alpha The alpha level
 #' @export
 is_normal <- function(v, alpha = 0.05) {
-  if (length(v) < 3 | length(v) > 5000) return("NA")
-  else return(tryCatch(ifelse(shapiro.test(v)$p.value > alpha,
-                              "Yes", "No"),
-                       error = function(cond) "NA"))
+  if (length(v) < 3 | length(v) > 5000)
+    return("NA")
+  else
+    return(tryCatch(
+      ifelse(shapiro.test(v)$p.value > alpha,
+             "Yes", "No"),
+      error = function(cond)
+        "NA"
+    ))
 }
 
 #############################################################################
@@ -71,15 +80,21 @@ is_normal <- function(v, alpha = 0.05) {
 #' @param alpha The alpha level used for testing.
 #' @param what The aesthetic used to indicate the test result.
 #' @export
-normal_note <- function(notes = NULL, alpha = 0.05, what = "Coloring") {
-  msg <-
-    paste(what, "indicated if a Shapiro-Wilk test of normality",
-          "failed to reject the null hypothesis that the data were",
-          "sampled from a population that was normally distributed",
-          paste0("(*p*>", alpha, ")."))
-  ifelse(is.null(notes) || (nchar(notes) == 0),
-         msg, paste0(notes, "  ", msg))
-}
+normal_note <-
+  function(notes = NULL,
+           alpha = 0.05,
+           what = "Coloring") {
+    msg <-
+      paste(
+        what,
+        "indicated if a Shapiro-Wilk test of normality",
+        "failed to reject the null hypothesis that the data were",
+        "sampled from a population that was normally distributed",
+        paste0("(*p*>", alpha, ").")
+      )
+    ifelse(is.null(notes) || (nchar(notes) == 0),
+           msg, paste0(notes, "  ", msg))
+  }
 
 #' Appends a suffix regarding the size of a data frame.
 #'
@@ -101,7 +116,10 @@ n_is <- function(title = NULL, df, n = "n") {
 #' @param notes Existing notes.
 #' @export
 as_notes <- function(notes) {
-  ifelse(!is.null(notes) && startsWith(notes, "Note."), notes, paste0("Note.  ", notes))
+  ifelse(!is.null(notes) &&
+           startsWith(notes, "Note."),
+         notes,
+         paste0("Note.  ", notes))
 }
 
 #############################################################################
@@ -398,7 +416,7 @@ as_flextable.summary.rfit <- function(x) {
     # Get number of body rows.
     b_nrow <- nrow_part(x, "body")
     # Round doubles to three digits.
-    x <- colformat_double(x, digits = 3, na_str = "", )
+    x <- colformat_double(x, digits = 3, na_str = "")
     # Improve header labels.
     x <- set_header_labels(x, term = "Term", `Std. Error` = "SE",
                            t.value = "t", p.value = "Sig.")
@@ -463,8 +481,10 @@ grouped_title <- function(title, g) {
 #' @export
 grouped_bookmark <- function(bookmark, g) {
   len_g <- length(g)
-  if (len_g == 0) bookmark
-  else paste0(bookmark, "By", paste0(g, collapse = ""))
+  if (len_g == 0)
+    bookmark
+  else
+    paste0(bookmark, "By", paste0(g, collapse = ""))
 }
 
 #############################################################################
