@@ -7,10 +7,10 @@
 ggimg(img)
 }
 \arguments{
-\item{img}{An image, such as from png::readPNG}
+\item{img}{An image, such as from png::readPNG.}
 }
 \value{
-A ggplot of the image
+A ggplot of the image.
 }
 \description{
 Converts a static image to a ggplot with fixed coordinates.

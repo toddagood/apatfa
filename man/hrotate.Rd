@@ -7,10 +7,10 @@
 hrotate(x)
 }
 \arguments{
-\item{x}{A flextable}
+\item{x}{A flextable.}
 }
 \value{
-The flextable with rotated headers
+The flextable with rotated headers, fit to the body width.
 }
 \description{
 Rotates the header of a flextable.

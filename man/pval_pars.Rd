@@ -7,10 +7,10 @@
 pval_pars(pvals)
 }
 \arguments{
-\item{pvals}{The p values}
+\item{pvals}{The p values.}
 }
 \value{
-Formatted paragraphs
+Formatted paragraphs.
 }
 \description{
 Converts p values to formatted paragraphs.

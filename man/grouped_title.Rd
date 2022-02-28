@@ -7,12 +7,12 @@
 grouped_title(title, g)
 }
 \arguments{
-\item{title}{The base title}
+\item{title}{The base title.}
 
-\item{g}{A vector of grouping variable names}
+\item{g}{A vector of grouping variable names.}
 }
 \value{
-A title suffixed with grouping information
+The base title suffixed with grouping information.
 }
 \description{
 Gets a title for a grouping combination.

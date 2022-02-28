@@ -7,12 +7,12 @@
 out_of_date(target, dependency)
 }
 \arguments{
-\item{target}{The target file}
+\item{target}{The target file.}
 
-\item{dependency}{The dependency file}
+\item{dependency}{The dependency file.}
 }
 \value{
-TRUE if the target is out of date
+TRUE if the target is out of date.
 }
 \description{
 Performs a dependency check.

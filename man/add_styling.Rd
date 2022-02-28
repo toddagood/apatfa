@@ -2,22 +2,19 @@
 % Please edit documentation in R/utils.R
 \name{add_styling}
 \alias{add_styling}
-\title{Adds styling for the columns of a data frame.  Factor and logical
-columns will use mono face for values.  All column names will be
-in italics.}
+\title{Adds styling for the columns of a data frame.}
 \usage{
 add_styling(styles, df)
 }
 \arguments{
-\item{styles}{Existing styles}
+\item{styles}{Existing styles.}
 
-\item{df}{The data frame to add}
+\item{df}{The data frame to add.}
 }
 \value{
-Updated styles
+Updated styles.
 }
 \description{
-Adds styling for the columns of a data frame.  Factor and logical
-columns will use mono face for values.  All column names will be
-in italics.
+Factor and logical columns will use mono face for values.  All column
+names will be in italics.
 }

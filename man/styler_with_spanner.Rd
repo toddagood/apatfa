@@ -7,14 +7,14 @@
 styler_with_spanner(x, styles, spanner)
 }
 \arguments{
-\item{x}{A flextable}
+\item{x}{A flextable.}
 
-\item{styles}{A styles list to use}
+\item{styles}{A styles list to use.}
 
-\item{spanner}{The spanner variable name}
+\item{spanner}{The spanner variable name.}
 }
 \value{
-The styled flextable
+The styled flextable.
 }
 \description{
 Applies styles to a flextable with a table spanner.

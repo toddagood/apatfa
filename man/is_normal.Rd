@@ -7,10 +7,11 @@
 is_normal(v, alpha = 0.05)
 }
 \arguments{
-\item{v}{The values to test}
+\item{v}{The values to test.}
 
-\item{alpha}{The alpha level}
+\item{alpha}{The alpha level.}
 }
 \description{
-Runs a Shapiro-Wilk test of normality.
+Returns "Yes" if v is normal, "No" if v is not normal,
+or "NA" if the test cannot be run.
 }

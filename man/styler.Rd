@@ -7,16 +7,16 @@
 styler(x, styles, i = NULL, fit = TRUE)
 }
 \arguments{
-\item{x}{A flextable}
+\item{x}{A flextable.}
 
-\item{styles}{A styles list to use}
+\item{styles}{A styles list to use.}
 
-\item{i}{A column selector for the flextable}
+\item{i}{A column selector for the flextable.}
 
-\item{fit}{Fit to the width if TRUE}
+\item{fit}{Fit to the width if TRUE.}
 }
 \value{
-The styled flextable
+The styled flextable.
 }
 \description{
 Applies styles to a flextable.

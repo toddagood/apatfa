@@ -10,7 +10,7 @@ scale_color_yes_no_na(styles = get_styles())
 \item{styles}{Can use custom colors from a styles list.}
 }
 \value{
-A scale_color_manual object
+A scale_color_manual object.
 }
 \description{
 Gets a scale_color_manual with Yes, No, NA aesthetic keys.

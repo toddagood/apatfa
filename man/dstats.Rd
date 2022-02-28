@@ -7,10 +7,10 @@
 dstats(v)
 }
 \arguments{
-\item{v}{The values to describe}
+\item{v}{The values to describe.}
 }
 \value{
-A tibble of descriptive stats
+A tibble of descriptive statistics.
 }
 \description{
 Gets descriptive statistics for variable v.

@@ -2,16 +2,16 @@
 % Please edit documentation in R/utils.R
 \name{as_flextable.summary.rfit}
 \alias{as_flextable.summary.rfit}
-\title{Converts a summary.rfit to a flextable}
+\title{Converts a summary.rfit to a flextable.}
 \usage{
 \method{as_flextable}{summary.rfit}(x)
 }
 \arguments{
-\item{x}{An rfit summary}
+\item{x}{An rfit summary.}
 }
 \value{
-A flextable
+A flextable.
 }
 \description{
-Converts a summary.rfit to a flextable
+Converts a summary.rfit to a flextable.
 }

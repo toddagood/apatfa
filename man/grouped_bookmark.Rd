@@ -7,12 +7,12 @@
 grouped_bookmark(bookmark, g)
 }
 \arguments{
-\item{bookmark}{The base bookmark}
+\item{bookmark}{The base bookmark.}
 
-\item{g}{A vector of grouping variable names}
+\item{g}{A vector of grouping variable names.}
 }
 \value{
-A bookmark suffixed with grouping information
+The base bookmark suffixed with grouping information.
 }
 \description{
 Gets a bookmark for a grouping combination.

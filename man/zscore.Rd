@@ -2,16 +2,19 @@
 % Please edit documentation in R/utils.R
 \name{zscore}
 \alias{zscore}
-\title{Compute standardized scores}
+\title{Computes standardized scores.}
 \usage{
-zscore(x)
+zscore(x, na.rm = FALSE)
 }
 \arguments{
-\item{x}{The values}
+\item{x}{a numeric vector or an \R object but not a
+    \code{\link{factor}} coercible to numeric by \code{as.double(x)}.}
+
+\item{na.rm}{logical.  Should missing values be removed?}
 }
 \value{
-The Z-scored values
+The standardized scores for the values.
 }
 \description{
-Compute standardized scores
+Subtracts the mean and then divides by the standard deviation.
 }

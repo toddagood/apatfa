@@ -10,7 +10,7 @@ scale_fill_true_false(styles = get_styles())
 \item{styles}{Can use custom colors from a styles list.}
 }
 \value{
-A scale_fill_manual object
+A scale_fill_manual object.
 }
 \description{
 Gets a scale_fill_manual with TRUE and FALSE aesthetic keys.

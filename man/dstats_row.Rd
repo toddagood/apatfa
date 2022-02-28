@@ -2,22 +2,24 @@
 % Please edit documentation in R/utils.R
 \name{dstats_row}
 \alias{dstats_row}
-\title{Gets a tibble containing the name of the variable (in the first column)
-and descriptive statistics for the named variable in the remaining
-columns}
+\title{Gets a tibble row summarizing the statistics of a named variable.}
 \usage{
 dstats_row(name, df)
 }
 \arguments{
-\item{name}{The variable name}
+\item{name}{The variable name.}
 
-\item{df}{The data frame}
+\item{df}{The data frame.}
 }
 \value{
-A tibble of descriptive stats
+A tibble row of descriptive statistics for the named variable.
 }
 \description{
-Gets a tibble containing the name of the variable (in the first column)
-and descriptive statistics for the named variable in the remaining
-columns
+The first column will be named "Variable" and will contain
+the name of the variable.  The remaining columns will provide
+the descriptive statistics for the named variable.
+}
+\examples{
+dstats_row("x", data.frame(x = c(1, 2, 3)))
+purrr::map_dfr(c("Sepal.Length", "Sepal.Width"), dstats_row, iris)
 }

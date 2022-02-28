@@ -8,12 +8,12 @@ of the grouping variables taken m at a time for each m in range r.}
 grouped_combn(gv, r = seq.int(0, length(gv)))
 }
 \arguments{
-\item{gv}{A vector of group variable names}
+\item{gv}{A vector of group variable names.}
 
-\item{r}{The combinations range, defaults to all combinations}
+\item{r}{The combinations range, defaults to all combinations.}
 }
 \value{
-A list of combinations of the grouping variables
+A list of combinations of the grouping variables.
 }
 \description{
 Converts a vector of grouping variables to a list of combinations

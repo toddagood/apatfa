@@ -2,13 +2,13 @@
 % Please edit documentation in R/utils.R
 \name{get_styles}
 \alias{get_styles}
-\title{Gets a styles list}
+\title{Gets a styles list.}
 \usage{
 get_styles()
 }
 \value{
-A list of style elements
+A list of style elements.
 }
 \description{
-Gets a styles list
+Gets a styles list.
 }

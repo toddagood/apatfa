@@ -2,18 +2,18 @@
 % Please edit documentation in R/utils.R
 \name{as_flextable.raov}
 \alias{as_flextable.raov}
-\title{Converts an raov to a flextable}
+\title{Converts an raov to a flextable.}
 \usage{
 \method{as_flextable}{raov}(x, effect_size)
 }
 \arguments{
-\item{x}{An raov}
+\item{x}{An raov.}
 
-\item{effect_size}{The effect size}
+\item{effect_size}{The effect size.}
 }
 \value{
-A flextable
+A flextable.
 }
 \description{
-Converts an raov to a flextable
+Converts an raov to a flextable.
 }
