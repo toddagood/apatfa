@@ -364,7 +364,7 @@ note_p_value <- function(notes, p) {
     note
 }
 
-#' Appends a note about an statistic from a hypothesis test.
+#' Appends a note about a statistic from a hypothesis test.
 #'
 #' @param notes The notes.
 #' @param h A hypothesis test.
