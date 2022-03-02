@@ -433,6 +433,7 @@ load_figure <- function(bookmark) {
   if (!file.exists(meta_file)) {
     stop("File not found: ", meta_file)
   }
+  obj <- NULL
   load(meta_file)
   tfas <- get_tfas()
   tfas[[bookmark]] <- obj
@@ -546,6 +547,7 @@ load_table <- function(bookmark) {
   if (!file.exists(meta_file)) {
     stop("File not found: ", meta_file)
   }
+  obj <- NULL
   load(meta_file)
   tfas <- get_tfas()
   tfas[[bookmark]] <- obj
