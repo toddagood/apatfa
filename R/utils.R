@@ -1,20 +1,198 @@
-#' Adds styling for the columns of a data frame.
-#'
-#' Factor and logical columns will use mono face for values.  All column
-#' names will be in italics.
+#' Adds a car::Anova() table.
 #'
 #' @import dplyr
 #' @import flextable
+#' @importFrom ftExtra as_paragraph_md
 #' @import ggplot2
+#' @importFrom graphics abline
 #' @importFrom grid rasterGrob
+#' @importFrom gtools capwords
 #' @importFrom moments kurtosis skewness
 #' @import officer
 #' @importFrom purrr flatten keep map map_depth
 #' @importFrom scales pvalue_format
-#' @importFrom stats sd setNames quantile shapiro.test formula
+#' @importFrom stats AIC BIC formula hatvalues logLik nobs
+#' @importFrom stats predict quantile rstandard sd setNames shapiro.test
 #' @import tibble
+#' @importFrom generics tidy
 #' @import tidyr
 #' @importFrom utils flush.console
+#'
+#' @param x An Anova.
+#' @param ... Args for add_table().
+#'
+#' @return An Anova flextable.
+#' @export
+add_anova_table <- function(x, ...) {
+  models <- attr(x, "heading")[[2]]
+  x <- rowid_to_column(x, "Model")
+  x <- as_flextable(x)
+  x <- italic(x, j = 2:6, part = "header")
+  x <- colformat_double(x, j = c(3, 5), digits = 3, na_str = "")
+  x <- mk_par(x, j = "Pr(>Chi)", part = "body", use_dot = TRUE,
+              value = pval_pars(.))
+  x <- add_footer_lines(x, models)
+  x <- autofit(x)
+  add_table(x, ...)
+}
+
+#' Adds a plot of Cook's distance by observation number.
+#'
+#' @param fit A fit
+#' @inheritParams begin_figure
+#'
+#' @return
+#' @export
+add_fit_cook_fig <- function(fit, bookmark, title) {
+  notes <- "
+Note.  Labels indicated the ID of the example in the dataset."
+  apatfa::begin_figure(bookmark, title, notes = notes)
+  plot(fit, which = 4)
+  abline(h = c(0.5, 1.0), lty = 2, col = 2)
+  apatfa::end_figure()
+  return()
+}
+
+#' Add plots for fits.
+#'
+#' @param fit A fit
+#' @param num The fit number
+#'
+#' @return
+#' @export
+add_fit_figs <- function(fit, num) {
+  title <- "Plot of Observed by Fitted for Fit"
+  add_fit_obf_fig(fit, paste0("fOFFit", num), paste(title, num))
+
+  title <- "Plot of Residual by Predicted for Fit"
+  add_fit_rp_fig(fit, paste0("fRPFit", num), paste(title, num))
+
+  if (diff(range(hatvalues(fit))) > 1e-10) {
+    title <- "Plot of Residual by Leverage for Fit"
+    add_fit_rl_fig(fit, paste0("fRLFit", num), paste(title, num))
+  } else {
+    title <- "Plot of Cook's Distance by Observation for Fit"
+    add_fit_cook_fig(fit, paste0("fCookFit", num), paste(title, num))
+  }
+  return()
+}
+
+#' Adds an observed versus fitted plot.
+#'
+#' @param fit A fit
+#' @inheritParams add_figure
+#'
+#' @return A figure.
+#' @export
+add_fit_obf_fig <- function(fit, bookmark, title) {
+  notes <- "
+Note.  Labels indicated the ID of the example in the dataset."
+  fig <-
+    ggplot(mapping = aes(x = fit$fitted.values,
+                         y = fit$y,
+                         label = names(fit$y))) +
+    geom_point() +
+    geom_abline(aes(slope = 1, intercept = 0), linetype = 2) +
+    geom_text(check_overlap = TRUE, nudge_y = 0.25) +
+    scale_x_continuous(breaks = integers_in_range) +
+    scale_y_continuous(breaks = integers_in_range) +
+    xlab("Fitted") +
+    ylab("Observed")
+  add_figure(fig, bookmark, title, notes = notes)
+}
+
+#' Adds a plot of residual by leverage.
+#'
+#' @param fit A fit
+#' @inheritParams begin_figure
+#'
+#' @return
+#' @export
+add_fit_rl_fig <- function(fit, bookmark, title) {
+  notes <- "
+Note.  Labels indicated the ID of the example in the dataset."
+  apatfa::begin_figure(bookmark, title, notes = notes)
+  plot(fit, which = 5)
+  apatfa::end_figure()
+  return()
+}
+
+#' Adds a plot of residual by predicted value.
+#'
+#' @param fit A fit
+#' @inheritParams begin_figure
+#' @param type The type of residual to plot.
+#'
+#' @return A figure.
+#' @export
+add_fit_rp_fig <- function(fit, bookmark, title, type = "pearson") {
+  notes <- "
+Note.  Labels indicated the ID of the example in the dataset."
+  p <- predict(fit)
+  r <- rstandard(fit, type = type)
+  fig <-
+    ggplot(mapping = aes(x = p, y = r, label = names(r))) +
+    geom_point() +
+    geom_smooth(formula = y ~ x, method = "glm", se = FALSE) +
+    geom_text(check_overlap = TRUE, nudge_y = 0.25) +
+    xlab("Predicted") +
+    ylab(paste("Std.", capwords(type), "Residual"))
+  add_figure(fig, bookmark, title, notes = notes)
+}
+
+#' Adds an lm table.
+#'
+#' @param x An lm fit.
+#' @param ... Args for add_table().
+#'
+#' @return A flextable.
+#' @export
+add_lm_table <- function(x, ...) {
+  x <- as_flextable(x)
+  ncol <- ncol_keys(x)
+  b_nrow <- nrow_part(x, "body")
+  x <- set_header_labels(x, term = "Term", std.error = "SE", statistic = "t")
+  x <- italic(x, j = 2:ncol, part = "header")
+  if (b_nrow > 1) x <- italic(x, i = 2:b_nrow, j = 1, part = "body")
+  x <- autofit_width(x)
+  add_table(x, ...)
+}
+
+#' Adds a glm table.
+#'
+#' @param x A glm fit.
+#' @param ... Args for add_table().
+#'
+#' @return A flextable.
+#' @export
+add_glm_table <- function(x, ...) {
+  aic <- formatC(AIC(x), digits = 3, format = "f")
+  bic <- formatC(BIC(x), digits = 3, format = "f")
+  loglik <- formatC(logLik(x), digits = 2, format = "f")
+  n <- nobs(x)
+  sep <- paste0(rep("&nbsp;", 6), collapse = "")
+  glanced <- paste0("*AIC*: ", aic, sep,
+                    "*BIC*: ", bic, sep,
+                    "log(*likelihood*): ", loglik, sep,
+                    "*n*: ", n)
+  fm <- paste("Model:", deparse1(x$formula))
+  x <- as_flextable(x)
+  ncol <- ncol_keys(x)
+  b_nrow <- nrow_part(x, "body")
+  x <- set_header_labels(x, term = "Term", std.error = "SE", statistic = "z")
+  x <- italic(x, j = 2:ncol, part = "header")
+  if (b_nrow > 1) x <- italic(x, i = 2:b_nrow, j = 1, part = "body")
+  x <- mk_par(x, i = 2, j = 1, value = as_paragraph_md(glanced),
+              part = "footer")
+  x <- add_footer_lines(x, fm)
+  x <- autofit(x)
+  add_table(x, ...)
+}
+
+#' Adds styling for the columns of a data frame.
+#'
+#' Factor and logical columns will use mono face for values.  All column
+#' names will be in italics.
 #'
 #' @param styles Existing styles.
 #' @param df The data frame to add.
@@ -30,6 +208,94 @@ add_styling <- function(styles, df) {
   return(styles)
 }
 
+#' Converts an aov to a flextable.
+#'
+#' @param x An aov.
+#'
+#' @return A flextable.
+#' @export
+as_flextable.aov <- function(x) {
+  styler <- function(x) {
+    # Get number of cols.
+    ncol <- ncol_keys(x)
+    # Get number of body rows.
+    b_nrow <- nrow_part(x, "body")
+    # Round doubles to three digits.
+    x <- colformat_double(x, digits = 3, na_str = "")
+    # Improve header labels.
+    x <- set_header_labels(x, term = "Term", `df` = "Df", sumsq = "Sum Sq",
+                           meansq = "Mean Sq", statistic = "F",
+                           p.value = "Sig.")
+    # Italicize statistics in the header.
+    x <- italic(x, j = seq.int(2, ncol), part = "header")
+    # Italicize variables in the first body column.
+    x <- italic(x, i = seq.int(1, b_nrow - 1), j = 1, part = "body")
+    # Use special formatting for p values.
+    x <- mk_par(x, j = "p.value", part = "body", use_dot = TRUE,
+                value = pval_pars(.))
+    # Fit to width.
+    return(autofit_width(x))
+  }
+  tidy(x) %>%
+    mutate(across("df", as.integer)) %>%
+    flextable() %>%
+    styler()
+}
+
+#' Converts an htest to a flextable.
+#'
+#' @param x An htest.
+#'
+#' @return A flextable
+#' @export
+as_flextable.htest <- function(x) {
+  styler <- function(x) {
+    # Round doubles to three digits.
+    x <- colformat_double(x, digits = 3, na_str = "")
+    # Improve header labels.
+    name <- x$statistic %>% attr("name") %>% title_case()
+    pname <- x$parameter %>% attr("name") %>% title_case()
+    x <- set_header_labels(x, statistic = name, parameter = pname,
+                           p.value = "Sig.", method = "Method")
+    # Italicize statistics in the header.
+    x <- italic(x, j = 1:3, part = "header")
+    # Use special formatting for p values.
+    x <- mk_par(x, j = "p.value", part = "body", use_dot = TRUE,
+                value = pval_pars(.))
+    # Fit to width.
+    return(autofit_width(x))
+  }
+  tidy(x) %>%
+    flextable() %>%
+    styler()
+}
+
+#' Converts a kruskal_effsize to a flextable.
+#'
+#' @param x A kruskal_effsize object.
+#'
+#' @return A flextable.
+#' @export
+as_flextable.kruskal_effsize <- function(x) {
+  styler <- function(x) {
+    # Round doubles to three digits.
+    x <- colformat_double(x, digits = 3)
+    # Improve header labels.
+    x <- set_header_labels(x, .y. = "Variable",
+                           effsize = "Effect Size",
+                           method = "Method",
+                           magnitude = "Magnitude")
+    # Italicize statistics in the header.
+    x <- italic(x, j = c(2, 3), part = "header")
+    # Italicize the variable in the body.
+    x <- italic(x, j = 1, part = "body")
+    # Fit to width.
+    return(autofit_width(x))
+  }
+  flextable(x) %>%
+    styler()
+}
+
 #' Converts an raov to a flextable.
 #'
 #' @param x An raov.
@@ -42,7 +308,7 @@ as_flextable.raov <- function(x, effect_size) {
     # Round doubles to three digits.
     x <- colformat_double(x, digits = 3, na_str = "")
     # Improve header labels.
-    x <- set_header_labels(x, DF = "Df", `p-value` = "Sig.",
+    x <- set_header_labels(x, `DF` = "Df", `p-value` = "Sig.",
                            effect_size = "Effect Size")
     # Italicize statistics in the header.
     x <- italic(x, j = 2:7, part = "header")
@@ -58,7 +324,7 @@ as_flextable.raov <- function(x, effect_size) {
     as_tibble() %>%
     add_column(Term = rownames(x$table), .before = 1) %>%
     add_column(effect_size = effect_size) %>%
-    mutate(across(DF, as.integer)) %>%
+    mutate(across("DF", as.integer)) %>%
     flextable() %>%
     styler()
 }
@@ -287,6 +553,26 @@ is_normal <- function(v, alpha = 0.05) {
       error = function(cond)
         "NA"
     ))
+}
+
+#' Returns the integer values in the range of x, expanded.
+#'
+#' @inherit integers_in_range
+#' @export
+integers_in_extended_range <-
+  function(x) integers_in_range(x, extend = TRUE)
+
+#' Returns the integer values in the range of x.
+#'
+#' @param x The axis values.
+#' @param extend If TRUE, lean out on the borders.
+#'
+#' @return A sequence of values in the range.
+#' @export
+integers_in_range <- function(x, extend = FALSE) {
+  lo <- min(x, na.rm = TRUE)
+  hi <- max(x, na.rm = TRUE)
+  if (extend) seq(floor(lo), ceiling(hi)) else seq(ceiling(lo), floor(hi))
 }
 
 #' Performs a correlation test and appends a note about it.

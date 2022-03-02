@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils.R
 \name{note_statistic_htest}
 \alias{note_statistic_htest}
-\title{Appends a note about an statistic from a hypothesis test.}
+\title{Appends a note about a statistic from a hypothesis test.}
 \usage{
 note_statistic_htest(notes, h)
 }
@@ -15,5 +15,5 @@ note_statistic_htest(notes, h)
 The notes, with a note about the statistic appended.
 }
 \description{
-Appends a note about an statistic from a hypothesis test.
+Appends a note about a statistic from a hypothesis test.
 }
