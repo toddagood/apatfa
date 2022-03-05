@@ -155,11 +155,15 @@ end_landscape <- function (x) {
   officer::body_end_block_section(x, bs)
 }
 
-table_adder <- function(x, obj) {
+table_adder <- function(x, obj, i) {
   flextable::body_add_flextable(x, obj$ft, align = "left", split = TRUE)
 }
 
-figure_adder <- function(x, obj) {
+figure_adder <- function(x, obj, i) {
+  if (i == 1) {
+    # Reserve height above the first figure for the section heading.
+    obj$height <- obj$height - 0.4
+  }
   png_file <- paste0(obj$img, ".png")
   rsvg::rsvg_png(obj$img, png_file,
                  width = 300 * obj$width,
@@ -265,7 +269,7 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
           md_title(obj$title)
         }
       x <- officer::body_add_blocks(x, title)
-      x <- item$adder(x, obj)
+      x <- item$adder(x, obj, i)
       if (!is.null(obj$notes)) {
         fp_p = officer::fp_par(line_spacing = 1)
         blank_line <- officer::fpar("", fp_p = fp_p)
@@ -331,7 +335,7 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
 #' @param wide Should the figure be displayed in landscape?
 #' @param width Width for the figure in inches
 #' @param height Height for the figure in inches
-#' @param reserve Amount to subtract from the height
+#' @param reserve Number of text lines to reserve
 #' @param notes Notes about the figure (string, fpar, or block_list)
 #' @export
 begin_figure <- function(bookmark,
@@ -342,16 +346,25 @@ begin_figure <- function(bookmark,
                          reserve = 0,
                          notes = NULL) {
   portrait_width <- 6.5
-  portrait_height <- 7.0
+  portrait_height <- 8.0
   landscape_width <- 9.0
-  landscape_height <- 7.0
+  landscape_height <- 5.7
   if (is.null(width)) {
     width <- if (wide) landscape_width else portrait_width
   }
   if (is.null(height)) {
     height <- if (wide) landscape_height else portrait_height
   }
-  height <- height - reserve
+  block_notes <-
+    if (inherits(notes, "block_list")) {
+      notes
+    } else {
+      md_notes(notes)
+    }
+  read_docx() %>%
+    body_add_blocks(block_notes) %>%
+    docx_dim()
+  height <- height - 0.4 * reserve
   fig_dir <- "./Figures"
   dir.create(fig_dir, showWarnings = FALSE)
   svg_file <- file.path(fig_dir, paste0(bookmark, ".svg"))
