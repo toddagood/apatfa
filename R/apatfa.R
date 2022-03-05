@@ -355,15 +355,6 @@ begin_figure <- function(bookmark,
   if (is.null(height)) {
     height <- if (wide) landscape_height else portrait_height
   }
-  block_notes <-
-    if (inherits(notes, "block_list")) {
-      notes
-    } else {
-      md_notes(notes)
-    }
-  read_docx() %>%
-    body_add_blocks(block_notes) %>%
-    docx_dim()
   height <- height - reserve
   fig_dir <- "./Figures"
   dir.create(fig_dir, showWarnings = FALSE)
