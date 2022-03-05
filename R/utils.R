@@ -246,7 +246,7 @@ as_flextable_aov <- function(x) {
 #'
 #' @return A flextable
 #' @export
-as_flextable.htest2 <- function(x) {
+as_flextable_htest <- function(x) {
   styler <- function(x) {
     # Round doubles to three digits.
     x <- colformat_double(x, digits = 3, na_str = "")
