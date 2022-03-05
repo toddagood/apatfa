@@ -1,5 +1,7 @@
-#' Adds a car::Anova() table.
+
+#' Adds a stats::anova(fit1, fit2) table.
 #'
+#' @import broom
 #' @import dplyr
 #' @import flextable
 #' @importFrom ftExtra as_paragraph_md
@@ -9,16 +11,15 @@
 #' @importFrom gtools capwords
 #' @importFrom moments kurtosis skewness
 #' @import officer
-#' @importFrom purrr flatten keep map map_depth
+#' @importFrom purrr flatten keep map map_chr map_depth
 #' @importFrom scales pvalue_format
 #' @importFrom stats AIC BIC formula hatvalues logLik nobs
 #' @importFrom stats predict quantile rstandard sd setNames shapiro.test
 #' @import tibble
-#' @importFrom generics tidy
 #' @import tidyr
 #' @importFrom utils flush.console
 #'
-#' @param x An Anova.
+#' @param x An anova comparing fit1 to fit2.
 #' @param ... Args for add_table().
 #'
 #' @return An Anova flextable.
@@ -28,8 +29,8 @@ add_anova_table <- function(x, ...) {
   x <- rowid_to_column(x, "Model")
   x <- as_flextable(x)
   x <- italic(x, j = 2:6, part = "header")
-  x <- colformat_double(x, j = c(3, 5), digits = 3, na_str = "")
-  x <- mk_par(x, j = "Pr(>Chi)", part = "body", use_dot = TRUE,
+  x <- colformat_double(x, j = 3:5, na_str = "")
+  x <- mk_par(x, j = 6, part = "body", use_dot = TRUE,
               value = pval_pars(.))
   x <- add_footer_lines(x, models)
   x <- autofit(x)
@@ -41,7 +42,6 @@ add_anova_table <- function(x, ...) {
 #' @param fit A fit
 #' @inheritParams begin_figure
 #'
-#' @return
 #' @export
 add_fit_cook_fig <- function(fit, bookmark, title) {
   notes <- "
@@ -58,7 +58,6 @@ Note.  Labels indicated the ID of the example in the dataset."
 #' @param fit A fit
 #' @param num The fit number
 #'
-#' @return
 #' @export
 add_fit_figs <- function(fit, num) {
   title <- "Plot of Observed by Fitted for Fit"
@@ -106,7 +105,6 @@ Note.  Labels indicated the ID of the example in the dataset."
 #' @param fit A fit
 #' @inheritParams begin_figure
 #'
-#' @return
 #' @export
 add_fit_rl_fig <- function(fit, bookmark, title) {
   notes <- "
@@ -214,14 +212,14 @@ add_styling <- function(styles, df) {
 #'
 #' @return A flextable.
 #' @export
-as_flextable.aov <- function(x) {
+as_flextable_aov <- function(x) {
   styler <- function(x) {
     # Get number of cols.
     ncol <- ncol_keys(x)
     # Get number of body rows.
     b_nrow <- nrow_part(x, "body")
     # Round doubles to three digits.
-    x <- colformat_double(x, digits = 3, na_str = "")
+    x <- colformat_double(x, na_str = "")
     # Improve header labels.
     x <- set_header_labels(x, term = "Term", `df` = "Df", sumsq = "Sum Sq",
                            meansq = "Mean Sq", statistic = "F",
@@ -248,7 +246,7 @@ as_flextable.aov <- function(x) {
 #'
 #' @return A flextable
 #' @export
-as_flextable.htest <- function(x) {
+as_flextable.htest2 <- function(x) {
   styler <- function(x) {
     # Round doubles to three digits.
     x <- colformat_double(x, digits = 3, na_str = "")
@@ -294,6 +292,27 @@ as_flextable.kruskal_effsize <- function(x) {
   }
   flextable(x) %>%
     styler()
+}
+
+#' Converts a power.htest to a flextable.
+#'
+#' @param x A power.htest such as from power.anova.test().
+#'
+#' @return A flextable.
+#' @export
+as_flextable.power.htest <- function(x) {
+  tibble(Groups = x$g,
+         n = x$n,
+         `Between Var.` = x$between.var,
+         `Within Var.` = x$within.var,
+         `Sig. Level` = x$sig.level,
+         Power = x$power) %>%
+    flextable() %>%
+    italic(j = 3:6, part = "header") %>%
+    colformat_double() %>%
+    add_footer_lines(values = paste0(x$note, ".  ", x$method, ".") %>%
+                       note_intro()) %>%
+    align(align = "left", part = "footer")
 }
 
 #' Converts an raov to a flextable.
@@ -364,6 +383,33 @@ as_flextable.summary.rfit <- function(x) {
     add_column(Term = rownames(x$coefficients), .before = 1) %>%
     flextable() %>%
     styler(x$R2)
+}
+
+#' Converts a TukeyHSD to a flextable.
+#'
+#' @param x A TukeyHSD.
+#'
+#' @return A flextable.
+#' @export
+as_flextable.TukeyHSD <- function(x) {
+  styler <- function(x) {
+    x <- colformat_double(x)
+    # Italicize statistics in the header.
+    x <- italic(x, j = 3:7, part = "header")
+    # Use special formatting for p values.
+    x <- mk_par(x, j = 7, part = "body", use_dot = TRUE,
+                value = pval_pars(.))
+    # Fit to width.
+    return(autofit_width(x))
+  }
+  ntr <- function(name) {
+    gsub(".", " ", name, fixed = TRUE)
+  }
+  tidy(x) %>%
+    rename_with(function(ns) gsub(".", " ", ns, fixed = TRUE)) %>%
+    rename_with(function(ns) map_chr(ns, title_case)) %>%
+    flextable() %>%
+    styler()
 }
 
 #' Conditionally blanks the x axis.
@@ -573,6 +619,20 @@ integers_in_range <- function(x, extend = FALSE) {
   lo <- min(x, na.rm = TRUE)
   hi <- max(x, na.rm = TRUE)
   if (extend) seq(floor(lo), ceiling(hi)) else seq(ceiling(lo), floor(hi))
+}
+
+#' Appends a note about that.
+#'
+#' @param notes The notes.
+#' @param that That to note.
+#'
+#' @return The notes, with a note about that appended.
+#' @export
+note_that <- function(notes, that) {
+  if(!is.null(notes) && nchar(notes) > 0)
+    paste0(notes, "  ", that)
+  else
+    that
 }
 
 #' Performs a correlation test and appends a note about it.

@@ -13,9 +13,6 @@ add_fit_cook_fig(fit, bookmark, title)
 
 \item{title}{Title for the figure}
 }
-\value{
-
-}
 \description{
 Adds a plot of Cook's distance by observation number.
 }

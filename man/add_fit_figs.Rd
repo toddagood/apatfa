@@ -11,9 +11,6 @@ add_fit_figs(fit, num)
 
 \item{num}{The fit number}
 }
-\value{
-
-}
 \description{
 Add plots for fits.
 }

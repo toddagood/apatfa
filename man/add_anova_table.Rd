@@ -2,12 +2,12 @@
 % Please edit documentation in R/utils.R
 \name{add_anova_table}
 \alias{add_anova_table}
-\title{Adds a car::Anova() table.}
+\title{Adds a stats::anova(fit1, fit2) table.}
 \usage{
 add_anova_table(x, ...)
 }
 \arguments{
-\item{x}{An Anova.}
+\item{x}{An anova comparing fit1 to fit2.}
 
 \item{...}{Args for add_table().}
 }
@@ -15,5 +15,5 @@ add_anova_table(x, ...)
 An Anova flextable.
 }
 \description{
-Adds a car::Anova() table.
+Adds a stats::anova(fit1, fit2) table.
 }

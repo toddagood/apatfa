@@ -335,7 +335,7 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
 #' @param wide Should the figure be displayed in landscape?
 #' @param width Width for the figure in inches
 #' @param height Height for the figure in inches
-#' @param reserve Number of text lines to reserve
+#' @param reserve Amount to subtract from the height
 #' @param notes Notes about the figure (string, fpar, or block_list)
 #' @export
 begin_figure <- function(bookmark,
@@ -364,7 +364,7 @@ begin_figure <- function(bookmark,
   read_docx() %>%
     body_add_blocks(block_notes) %>%
     docx_dim()
-  height <- height - 0.4 * reserve
+  height <- height - reserve
   fig_dir <- "./Figures"
   dir.create(fig_dir, showWarnings = FALSE)
   svg_file <- file.path(fig_dir, paste0(bookmark, ".svg"))

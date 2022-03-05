@@ -13,9 +13,6 @@ add_fit_rl_fig(fit, bookmark, title)
 
 \item{title}{Title for the figure}
 }
-\value{
-
-}
 \description{
 Adds a plot of residual by leverage.
 }
