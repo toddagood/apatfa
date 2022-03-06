@@ -169,10 +169,10 @@ add_glm_table <- function(x, ...) {
   loglik <- formatC(logLik(x), digits = 2, format = "f")
   n <- nobs(x)
   sep <- paste0(rep("&nbsp;", 6), collapse = "")
-  glanced <- paste0("*AIC*: ", aic, sep,
-                    "*BIC*: ", bic, sep,
-                    "log(*likelihood*): ", loglik, sep,
-                    "*n*: ", n)
+  glanced <- paste0("AIC: ", aic, sep,
+                    "BIC: ", bic, sep,
+                    "log(likelihood): ", loglik, sep,
+                    "n: ", n)
   fm <- paste("Model:", deparse1(x$formula))
   x <- as_flextable(x)
   ncol <- ncol_keys(x)
@@ -399,6 +399,8 @@ as_flextable.TukeyHSD <- function(x) {
     # Use special formatting for p values.
     x <- mk_par(x, j = 7, part = "body", use_dot = TRUE,
                 value = pval_pars(.))
+    # Italicize the variable in the body.
+    x <- italic(x, j = 1, part = "body")
     # Fit to width.
     return(autofit_width(x))
   }
@@ -490,7 +492,7 @@ dstats_row <- function(name, df) {
 #' @export
 get_styles <- function() {
   list(
-    italic.cols = c(),
+    italic.cols = c("n", "N", "Mean", "SD", "p"),
     mono.cols = c(),
     mono.fontname = "Courier New",
     mono.fontsize = 12,
@@ -649,7 +651,7 @@ note_that <- function(notes, that) {
 note_cor_test <- function(notes, df, x, y, alpha = 0.05, ...) {
   stats::cor.test(df[[x]], df[[y]], ...) -> h
   w <- ifelse(h$p.value < alpha, "correlated", "not correlated")
-  paste0("*", x, "* and *", y, "* were ", w) %>%
+  paste0(x, " and ", y, " were ", w) %>%
     note_estimate_htest(h) %>%
     note_statistic_htest(h) %>%
     note_p_value(h$p.value) -> note
@@ -674,7 +676,7 @@ note_estimate_htest <- function(notes, h) {
            gsub("^0\\.", ".", .) %>%
            gsub("^-0\\.", "-.", .),
          val) %>%
-    paste0("*", name, "*(", h$parameter, ")=", .) -> note
+    paste0(name, "(", h$parameter, ")=", .) -> note
   if(!is.null(notes) && nchar(notes) > 0)
     paste0(notes, ", ", note)
   else
@@ -703,7 +705,7 @@ note_intro <- function(notes) {
 note_p_value <- function(notes, p) {
   scales::pvalue_format(prefix = c("<", "=", ">"))(p) %>%
     gsub("^(.)0\\.", "\\1.", .) %>%
-    paste0("*p*", .) -> note
+    paste0("p", .) -> note
   if(!is.null(notes) && nchar(notes) > 0)
     paste0(notes, ", ", note)
   else
@@ -720,7 +722,7 @@ note_p_value <- function(notes, p) {
 note_statistic_htest <- function(notes, h) {
   name <- h$statistic %>% attr("name")
   format(h$statistic, digits = 2) %>%
-    paste0("*", name, "*(", h$parameter, ")=", .) -> note
+    paste0(name, "(", h$parameter, ")=", .) -> note
   if(!is.null(notes) && nchar(notes) > 0)
     paste0(notes, ", ", note)
   else
@@ -742,7 +744,7 @@ note_normal <- function(notes = NULL, alpha = 0.05, what = "Coloring") {
         "indicated if a Shapiro-Wilk test of normality",
         "failed to reject the null hypothesis that the data were",
         "sampled from a population that was normally distributed",
-        paste0("(*p*>", alpha, ").")
+        paste0("(p>", alpha, ").")
       )
     ifelse(is.null(notes) || (nchar(notes) == 0),
            note, paste0(notes, "  ", note))
@@ -946,7 +948,7 @@ title_n <- function(title = NULL, df, n = "n") {
   msg <-
     nrow(df) %>%
     format(big.mark = ",") %>%
-    paste0("(*", n, "* = ", . , ")")
+    paste0("(", n, " = ", . , ")")
   ifelse(is.null(title) || (nchar(title) == 0),
          msg, paste(title, msg))
 }

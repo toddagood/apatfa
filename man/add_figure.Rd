@@ -8,11 +8,12 @@ add_figure(
   fig,
   bookmark,
   title,
+  styles,
+  notes = NULL,
   wide = FALSE,
   width = NULL,
   height = NULL,
-  reserve = 0,
-  notes = NULL
+  reserve = 0
 )
 }
 \arguments{
@@ -22,6 +23,10 @@ add_figure(
 
 \item{title}{Title for the figure}
 
+\item{styles}{A styles list to use.}
+
+\item{notes}{Notes about the figure}
+
 \item{wide}{Should the figure be displayed in landscape?}
 
 \item{width}{Width for the figure in inches}
@@ -29,8 +34,6 @@ add_figure(
 \item{height}{Height for the figure in inches}
 
 \item{reserve}{Amount to subtract from the height}
-
-\item{notes}{Notes about the figure}
 }
 \value{
 The figure

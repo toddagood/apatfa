@@ -7,17 +7,22 @@
 begin_figure(
   bookmark,
   title,
+  styles,
+  notes = NULL,
   wide = FALSE,
   width = NULL,
   height = NULL,
-  reserve = 0,
-  notes = NULL
+  reserve = 0
 )
 }
 \arguments{
 \item{bookmark}{Bookmark for the figure}
 
 \item{title}{Title for the figure}
+
+\item{styles}{A styles list to use.}
+
+\item{notes}{Notes about the figure.}
 
 \item{wide}{Should the figure be displayed in landscape?}
 
@@ -26,9 +31,11 @@ begin_figure(
 \item{height}{Height for the figure in inches}
 
 \item{reserve}{Amount to subtract from the height}
-
-\item{notes}{Notes about the figure (string, fpar, or block_list)}
 }
 \description{
-Begins capturing a figure using svg
+The title and notes args accept flextable objects.
+If a string is provided instead it will be converted
+to a flextable with one row and italics based on the styles.
+If a list of strings is provided instead it will be converted
+to a flextable with a row for each list item.
 }

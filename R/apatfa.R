@@ -143,7 +143,9 @@ end_portrait <- function (x) {
   psize <- officer::page_size(width = 8.5, height = 11.0,
                               orient = "portrait")
   bs <- officer::block_section(
-    officer::prop_section(page_size = psize, type = "nextPage"))
+    officer::prop_section(page_size = psize,
+                          page_margins = officer::page_mar(),
+                          type = "nextPage"))
   officer::body_end_block_section(x, bs)
 }
 
@@ -151,17 +153,18 @@ end_landscape <- function (x) {
   psize <- officer::page_size(width = 11.0, height = 8.5,
                               orient = "landscape")
   bs <- officer::block_section(
-    officer::prop_section(page_size = psize, type = "nextPage"))
+    officer::prop_section(page_size = psize,
+                          page_margins = officer::page_mar(),
+                          type = "nextPage"))
   officer::body_end_block_section(x, bs)
 }
 
-table_adder <- function(x, obj, i) {
+table_adder <- function(x, obj, ...) {
   flextable::body_add_flextable(x, obj$ft, align = "left", split = TRUE)
 }
 
 figure_adder <- function(x, obj, i) {
   if (i == 1) {
-    # Reserve height above the first figure for the section heading.
     obj$height <- obj$height - 0.4
   }
   png_file <- paste0(obj$img, ".png")
@@ -186,6 +189,71 @@ word_fields <- function(x) {
   as.character(purrr::map(nt, function(x) paste(x, collapse = "")))
 }
 
+note_table <- function(notes, styles, as_title = FALSE) {
+  defaults <- flextable::get_flextable_defaults()
+  props <- officer::fp_text(font.family = defaults$font.family,
+                            font.size = defaults$font.size,
+                            italic = FALSE)
+  iprops <- stats::update(props, italic = TRUE)
+  gregexpr("\\b", notes, perl = TRUE) %>%
+    regmatches(notes, ., invert = TRUE) %>%
+    lapply(function(z) {z[z != ""]}) -> notes_chunks
+
+  map(notes_chunks, function(note_chunks) {
+    map(note_chunks, function(chunk) {
+      if(xor(chunk %in% styles$italic.cols, as_title)) {
+        flextable::as_chunk(chunk, props = iprops)
+      } else {
+        flextable::as_chunk(chunk, props = props)
+      }})}) -> notes_chunks
+  map(notes_chunks, function(note_chunks) {
+    flextable::as_paragraph(list_values = note_chunks)
+  }) -> paras
+  tibble(paras = do.call(c, paras)) %>%
+    flextable() %>%
+    delete_part(part = "header") %>%
+    border_remove() %>%
+    padding(padding = 0) %>%
+    mk_par(value = paras)
+}
+
+#' @importFrom gdtools m_str_extents
+note_widths <- function(x) {
+  x$body$content[[1]]$data %>%
+    tibble() %>%
+    mutate(ft_row_id = row_number()) %>%
+    unnest(cols = 1) -> txt_data
+  widths <- txt_data$width
+  heights <- txt_data$height
+  txt_data$width <- NULL
+  txt_data$height <- NULL
+  fontsize <- txt_data$font.size
+  fontsize[!(txt_data$vertical.align %in% "baseline")] <-
+    fontsize[!(txt_data$vertical.align %in% "baseline")] / 2
+  str_extents_ <-
+    m_str_extents(
+      txt_data$txt,
+      fontname = txt_data$font.family,
+      fontsize = fontsize,
+      bold = txt_data$bold,
+      italic = txt_data$italic
+    ) / 72
+  str_extents_[, 1] <-
+    ifelse(is.na(str_extents_[, 1]) & !is.null(widths),
+           widths,
+           str_extents_[, 1])
+  str_extents_[, 2] <-
+    ifelse(is.na(str_extents_[, 2]) & !is.null(heights),
+           heights,
+           str_extents_[, 2])
+  dimnames(str_extents_) <- list(NULL, c("width", "height"))
+  txt_data <- cbind(txt_data, str_extents_)
+  txt_data %>%
+    group_by("ft_row_id") %>%
+    summarize(width = sum(width)) %>%
+    pull(width)
+}
+
 #' Creates an docx file with APA sections containing bookmarked
 #' table, figure, and appendix content
 #'
@@ -208,6 +276,7 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
   }
   # Read input file.
   x <- officer::read_docx(path = path)
+
   # Find all bookmark references.
   info <- word_fields(x)
   info <- info[grep("REF +[tfa][a-zA-Z0-9_]+", info)]
@@ -262,25 +331,13 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
       x <- officer::body_add_par(x, paste(item$caption, i),
                                  style = "caption")
       x <- officer::body_bookmark(x, bookmark)
-      title <-
-        if (inherits(obj$title, "block_list")) {
-          obj$title
-        } else {
-          md_title(obj$title)
-        }
-      x <- officer::body_add_blocks(x, title)
+      x <- table_adder(x, list(ft = obj$title))
       x <- item$adder(x, obj, i)
       if (!is.null(obj$notes)) {
         fp_p = officer::fp_par(line_spacing = 1)
         blank_line <- officer::fpar("", fp_p = fp_p)
         x <- officer::body_add_fpar(x, blank_line)
-        notes <-
-          if (inherits(obj$notes, "block_list")) {
-            obj$notes
-            } else {
-              md_notes(obj$notes)
-            }
-        x <- officer::body_add_blocks(x, notes)
+        x <- table_adder(x, list(ft = obj$notes))
       }
       if (obj$wide) {
         x <- end_landscape(x)
@@ -330,21 +387,29 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
 
 #' Begins capturing a figure using svg
 #'
+#' The title and notes args accept flextable objects.
+#' If a string is provided instead it will be converted
+#' to a flextable with one row and italics based on the styles.
+#' If a list of strings is provided instead it will be converted
+#' to a flextable with a row for each list item.
+#'
 #' @param bookmark Bookmark for the figure
 #' @param title Title for the figure
+#' @param styles A styles list to use.
+#' @param notes Notes about the figure.
 #' @param wide Should the figure be displayed in landscape?
 #' @param width Width for the figure in inches
 #' @param height Height for the figure in inches
 #' @param reserve Amount to subtract from the height
-#' @param notes Notes about the figure (string, fpar, or block_list)
 #' @export
 begin_figure <- function(bookmark,
                          title,
+                         styles,
+                         notes = NULL,
                          wide = FALSE,
                          width = NULL,
                          height = NULL,
-                         reserve = 0,
-                         notes = NULL) {
+                         reserve = 0) {
   portrait_width <- 6.5
   portrait_height <- 8.0
   landscape_width <- 9.0
@@ -356,6 +421,36 @@ begin_figure <- function(bookmark,
     height <- if (wide) landscape_height else portrait_height
   }
   height <- height - reserve
+  extra_lines <- 0
+  title <-
+    if (inherits(title, "flextable")) {
+      title
+    } else {
+      note_table(title, styles, as_title = TRUE)
+    }
+  title %>% note_widths() -> nws
+  tibble(w = nws) %>%
+    mutate(nlines = as.integer(w / width + 1)) %>%
+    summarize(nlines = sum(nlines)) %>%
+    pull(nlines) -> nlines
+  extra_lines <- extra_lines + (nlines - 1)
+  title <- title %>% flextable::width(width = width)
+  if (!is.null(notes)) {
+    notes <-
+      if (inherits(notes, "flextable")) {
+        notes
+      } else {
+        note_table(notes, styles, as_title = FALSE)
+      }
+    notes %>% note_widths() -> nws
+    tibble(w = nws) %>%
+      mutate(nlines = as.integer(w / width + 1)) %>%
+      summarize(nlines = sum(nlines)) %>%
+      pull(nlines) -> nlines
+    extra_lines <- extra_lines + nlines
+    notes <- notes %>% flextable::width(width = width)
+  }
+  height <- height - 0.4 * extra_lines
   fig_dir <- "./Figures"
   dir.create(fig_dir, showWarnings = FALSE)
   svg_file <- file.path(fig_dir, paste0(bookmark, ".svg"))
@@ -383,19 +478,22 @@ end_figure <- function() {grDevices::dev.off()}
 #' @param fig The figure
 #' @param bookmark Bookmark for the figure
 #' @param title Title for the figure
+#' @param styles A styles list to use.
+#' @param notes Notes about the figure
 #' @param wide Should the figure be displayed in landscape?
 #' @param width Width for the figure in inches
 #' @param height Height for the figure in inches
 #' @param reserve Amount to subtract from the height
-#' @param notes Notes about the figure
 #' @return The figure
 #' @export
-add_figure <- function(fig, bookmark, title, wide = FALSE, width = NULL,
-                       height = NULL, reserve = 0, notes = NULL) {
+add_figure <- function(fig, bookmark, title, styles, notes = NULL,
+                       wide = FALSE, width = NULL,
+                       height = NULL, reserve = 0) {
   print(fig)
   if (is.null(fig$layout)) {
-    begin_figure(bookmark, title, wide = wide, width = width,
-                 height = height, reserve = reserve, notes = notes)
+    begin_figure(bookmark, title, styles, notes = notes,
+                 wide = wide, width = width,
+                 height = height, reserve = reserve)
     print(fig)
     end_figure()
   } else {
@@ -406,19 +504,20 @@ add_figure <- function(fig, bookmark, title, wide = FALSE, width = NULL,
       afig <- fig[seq(i, min(last, i+step-1))]
       bookmarki <-
         if (length(iseq) == 1) bookmark else paste0(bookmark, i)
-      titlei <- if (is.list(title) && !inherits(title, "block_list")) {
+      titlei <- if (is.list(title) && !inherits(title, "flextable")) {
         title[[i]]
       } else {
         title
       }
       notesi <-
-        if (is.list(notes) && !inherits(notes, "block_list")) {
+        if (is.list(notes) && !inherits(notes, "flextable")) {
           notes[[i]]
         } else {
           notes
         }
-      begin_figure(bookmarki, titlei, wide = wide, width = width,
-                   height = height, reserve = reserve, notes = notesi)
+      begin_figure(bookmarki, titlei, styles, notes = notesi,
+                   wide = wide, width = width,
+                   height = height, reserve = reserve)
       print(afig)
       end_figure()
     }
@@ -520,13 +619,32 @@ autofit_width <- function(x, body_only = FALSE) {
 #' @param x A flextable
 #' @param bookmark Bookmark for the table
 #' @param title Title for the table
+#' @param styles A styles list to use.
 #' @param notes Notes about the table
 #' @param wide Should the table be displayed in landscape?
 #' @return A flextable
 #' @export
-add_table <- function(x, bookmark, title, notes = NULL, wide = FALSE) {
+add_table <- function(x, bookmark, title, styles,
+                      notes = NULL, wide = FALSE) {
   if (!inherits(x, "flextable")) {
     stop("add_table supports only flextable objects.")
+  }
+  width <- ifelse(wide, 9.0, 6.5)
+  title <-
+    if (inherits(title, "flextable")) {
+      title
+    } else {
+      note_table(title, styles, as_title = TRUE)
+    }
+  title %>% flextable::width(width = width) -> title
+  if (!is.null(notes)) {
+    notes <-
+      if (inherits(notes, "flextable")) {
+        notes
+      } else {
+        note_table(notes, styles, as_title = FALSE)
+      }
+    notes %>% flextable::width(width = width) -> notes
   }
   table_dir <- "./Tables"
   dir.create(table_dir, showWarnings = FALSE)

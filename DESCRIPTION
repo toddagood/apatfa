@@ -24,6 +24,7 @@ Imports:
     extrafont,
     flextable,
     ftExtra,
+    gdtools,
     ggplot2,
     grDevices,
     gtools,

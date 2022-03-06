@@ -4,7 +4,7 @@
 \alias{add_table}
 \title{Adds a flextable}
 \usage{
-add_table(x, bookmark, title, notes = NULL, wide = FALSE)
+add_table(x, bookmark, title, styles, notes = NULL, wide = FALSE)
 }
 \arguments{
 \item{x}{A flextable}
@@ -12,6 +12,8 @@ add_table(x, bookmark, title, notes = NULL, wide = FALSE)
 \item{bookmark}{Bookmark for the table}
 
 \item{title}{Title for the table}
+
+\item{styles}{A styles list to use.}
 
 \item{notes}{Notes about the table}
 
