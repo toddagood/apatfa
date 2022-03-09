@@ -678,7 +678,8 @@ note_cor_test <- function(notes, df, x, y, alpha = 0.05, ...) {
   paste0(x, " and ", y, " were ", w) %>%
     note_estimate_htest(h) %>%
     note_statistic_htest(h) %>%
-    note_p_value(h$p.value) -> note
+    note_p_value(h$p.value) %>%
+    paste0(".") -> note
   if(!is.null(notes) && nchar(notes) > 0)
     paste0(notes, "  ", note)
   else
