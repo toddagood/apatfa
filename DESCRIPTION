@@ -13,6 +13,10 @@ Description: Generates an output Word file (docx) containing bookmarked
     output file is designed to be included into the input file using
     a Word field {INCLUDETEXT "output_file.docx"} so that bookmarks
     in the output file can be referenced from the input file.
+    Planned enhancements: Use a styles list to italicize statistics and
+    variables in axis titles and the legend title, similar to
+    ggtext::element_markup() but driving the formating from a styles list
+    without requiring any markup.
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true

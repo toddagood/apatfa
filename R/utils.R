@@ -240,19 +240,43 @@ as_flextable_aov <- function(x) {
     styler()
 }
 
+#' Converts an effectsize_anova to a flextable.
+#'
+#' @param x An effectsize_anova, such as from effectsize::eta_squared().
+#'
+#' @return A flextable.
+#' @export
+as_flextable.effectsize_anova <- function(x) {
+  styler <- function(x) {
+    x <- colformat_double(x)
+    # Italicize statistics in the header.
+    x <- italic(x, j = 2:4, part = "header")
+    # Italicize the variable in the body.
+    x <- italic(x, j = 1, part = "body")
+    # Fit to width.
+    return(autofit_width(x))
+  }
+  x %>%
+    rename_with(function(ns) gsub("CI_", "Conf ", ns, fixed = TRUE)) %>%
+    select(-c("CI")) %>%
+    rename_with(function(ns) map_chr(ns, title_case)) %>%
+    flextable() %>%
+    styler()
+}
+
 #' Converts an htest to a flextable.
 #'
-#' @param x An htest.
+#' @param htest An htest.
 #'
 #' @return A flextable
 #' @export
-as_flextable_htest <- function(x) {
+as_flextable_htest <- function(htest) {
   styler <- function(x) {
     # Round doubles to three digits.
     x <- colformat_double(x, digits = 3, na_str = "")
     # Improve header labels.
-    name <- x$statistic %>% attr("name") %>% title_case()
-    pname <- x$parameter %>% attr("name") %>% title_case()
+    name <- htest$statistic %>% attr("name") %>% title_case()
+    pname <- htest$parameter %>% attr("name") %>% title_case()
     x <- set_header_labels(x, statistic = name, parameter = pname,
                            p.value = "Sig.", method = "Method")
     # Italicize statistics in the header.
@@ -263,7 +287,7 @@ as_flextable_htest <- function(x) {
     # Fit to width.
     return(autofit_width(x))
   }
-  tidy(x) %>%
+  tidy(htest) %>%
     flextable() %>%
     styler()
 }
@@ -310,9 +334,9 @@ as_flextable.power.htest <- function(x) {
     flextable() %>%
     italic(j = 3:6, part = "header") %>%
     colformat_double() %>%
-    add_footer_lines(values = paste0(x$note, ".  ", x$method, ".") %>%
-                       note_intro()) %>%
-    align(align = "left", part = "footer")
+    # Use special formatting for the power values.
+    mk_par(j = "Power", part = "body", use_dot = TRUE,
+           value = pval_pars(., with_p = FALSE))
 }
 
 #' Converts an raov to a flextable.
@@ -404,9 +428,6 @@ as_flextable.TukeyHSD <- function(x) {
     # Fit to width.
     return(autofit_width(x))
   }
-  ntr <- function(name) {
-    gsub(".", " ", name, fixed = TRUE)
-  }
   tidy(x) %>%
     rename_with(function(ns) gsub(".", " ", ns, fixed = TRUE)) %>%
     rename_with(function(ns) map_chr(ns, title_case)) %>%
@@ -492,7 +513,10 @@ dstats_row <- function(name, df) {
 #' @export
 get_styles <- function() {
   list(
-    italic.cols = c("n", "N", "Mean", "SD", "p"),
+    italic.cols = c("n", "N", "NAs",
+                    "Min", "Q1", "Median", "Mean", "Q3", "Max",
+                    "Range", "IQR", "SD", "Skewness", "Kurtosis",
+                    "p", "r", "t", "H", "W", "F", "df"),
     mono.cols = c(),
     mono.fontname = "Courier New",
     mono.fontsize = 12,
@@ -778,17 +802,22 @@ out_of_date <- function(target, dependency) {
 #' Converts p values to formatted paragraphs.
 #'
 #' @param pvals The p values.
+#' @param with_p Logical.  Prefix with the p character?
 #'
 #' @return Formatted paragraphs.
 #' @export
-pval_pars <- function(pvals) {
+pval_pars <- function(pvals, with_p = TRUE) {
   # Start with pvalue format.
   z <- pvalue_format(prefix = c("<", "=", ">"))(pvals)
   # Remove the leading zeros.
   z <- gsub("0\\.", ".", z)
-  # Create paragraphs with the pvals prefixed with an italic p.
-  italic_p <- as_chunk("p", props = fp_text_lite(italic = TRUE))
-  z <- as_paragraph(italic_p, z)
+  if (with_p) {
+    # Create paragraphs with the pvals prefixed with an italic p.
+    italic_p <- as_chunk("p", props = fp_text_lite(italic = TRUE))
+    z <- as_paragraph(italic_p, z)
+  } else {
+    z <- as_paragraph(z)
+  }
   # Use a blank paragraph for NA and NaN values.
   z[!is.finite(pvals)] <- as_paragraph("")
   return(z)

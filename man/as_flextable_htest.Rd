@@ -4,10 +4,10 @@
 \alias{as_flextable_htest}
 \title{Converts an htest to a flextable.}
 \usage{
-as_flextable_htest(x)
+as_flextable_htest(htest)
 }
 \arguments{
-\item{x}{An htest.}
+\item{htest}{An htest.}
 }
 \value{
 A flextable

@@ -332,6 +332,9 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
                                  style = "caption")
       x <- officer::body_bookmark(x, bookmark)
       x <- table_adder(x, list(ft = obj$title))
+      fp_p = officer::fp_par(line_spacing = 0.5)
+      blank_line <- officer::fpar("", fp_p = fp_p)
+      x <- officer::body_add_fpar(x, blank_line)
       x <- item$adder(x, obj, i)
       if (!is.null(obj$notes)) {
         fp_p = officer::fp_par(line_spacing = 1)

@@ -4,10 +4,12 @@
 \alias{pval_pars}
 \title{Converts p values to formatted paragraphs.}
 \usage{
-pval_pars(pvals)
+pval_pars(pvals, with_p = TRUE)
 }
 \arguments{
 \item{pvals}{The p values.}
+
+\item{with_p}{Logical.  Prefix with the p character?}
 }
 \value{
 Formatted paragraphs.
