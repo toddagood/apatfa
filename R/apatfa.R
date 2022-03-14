@@ -255,17 +255,18 @@ note_widths <- function(x) {
 }
 
 #' Creates an docx file with APA sections containing bookmarked
-#' table, figure, and appendix content
+#' table, figure, and appendix content.
 #'
-#' @param path Path to the input docx file
-#' @param target Path to the output docx file
-#' @param here Find the input docx file beside getSrcFilename(here)
-#' @param do_print If TRUE, the docx will be printed to the target
-#' @param do_browse If TRUE, also browse the target
+#' @param path Path to the input docx file.
+#' @param target Path to the output docx file.
+#' @param here Find the input docx file beside getSrcFilename(here).
+#' @param do_print If TRUE, the docx will be printed to the target.
+#' @param do_browse If TRUE, also browse the target.
+#' @param drop If TRUE, drop content not referenced by any bookmark.
 #' @return The output rdocx document
 #' @export
 apa_docx <- function(path = NULL, target = NULL, here = NULL,
-                     do_print = TRUE, do_browse = TRUE) {
+                     do_print = TRUE, do_browse = TRUE, drop = FALSE) {
   if (is.null(path) && is.function(here)) {
     path <- utils::getSrcFilename(here, full.names = TRUE)
     path <- paste0(tools::file_path_sans_ext(path), ".docx")
@@ -292,10 +293,12 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
   tbookmarks <- bookmarks[grep("^t", bookmarks)]
   fbookmarks <- bookmarks[grep("^f", bookmarks)]
   abookmarks <- bookmarks[grep("^a", bookmarks)]
-  # Generate referenced tfas first, followed by extra tfas.
-  tbookmarks <- c(tbookmarks, setdiff(tobjs, tbookmarks))
-  fbookmarks <- c(fbookmarks, setdiff(fobjs, fbookmarks))
-  abookmarks <- c(abookmarks, setdiff(aobjs, abookmarks))
+  if (drop == FALSE) {
+    # Generate referenced tfas first, followed by extra tfas.
+    tbookmarks <- c(tbookmarks, setdiff(tobjs, tbookmarks))
+    fbookmarks <- c(fbookmarks, setdiff(fobjs, fbookmarks))
+    abookmarks <- c(abookmarks, setdiff(aobjs, abookmarks))
+  }
   # The output file will initially be a copy of the input file
   # but with all body content removed.  Use an {INCLUDETExT}
   # field in Word to include the output file at the end of the
