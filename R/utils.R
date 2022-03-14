@@ -626,6 +626,26 @@ hrotate <- function(x) {
     autofit_width(body_only = TRUE)
 }
 
+#' Returns the integer values in the range of x, expanded.
+#'
+#' @inherit integers_in_range
+#' @export
+integers_in_extended_range <-
+  function(x) integers_in_range(x, extend = TRUE)
+
+#' Returns the integer values in the range of x.
+#'
+#' @param x The axis values.
+#' @param extend If TRUE, lean out on the borders.
+#'
+#' @return A sequence of values in the range.
+#' @export
+integers_in_range <- function(x, extend = FALSE) {
+  lo <- min(x, na.rm = TRUE)
+  hi <- max(x, na.rm = TRUE)
+  if (extend) seq(floor(lo), ceiling(hi)) else seq(ceiling(lo), floor(hi))
+}
+
 #' Runs a Shapiro-Wilk test of normality.
 #'
 #' Returns "Yes" if v is normal, "No" if v is not normal,
@@ -647,24 +667,18 @@ is_normal <- function(v, alpha = 0.05) {
     ))
 }
 
-#' Returns the integer values in the range of x, expanded.
+#' Uses the geom_boxplot() algorithm to identify the outlier points.
 #'
-#' @inherit integers_in_range
+#' @param x A vector of numeric data.
+#' @param ... Additional parameters to pass to geom_boxplot().
+#'
+#' @return A logical vector the same length as x (TRUE if outlier).
 #' @export
-integers_in_extended_range <-
-  function(x) integers_in_range(x, extend = TRUE)
-
-#' Returns the integer values in the range of x.
-#'
-#' @param x The axis values.
-#' @param extend If TRUE, lean out on the borders.
-#'
-#' @return A sequence of values in the range.
-#' @export
-integers_in_range <- function(x, extend = FALSE) {
-  lo <- min(x, na.rm = TRUE)
-  hi <- max(x, na.rm = TRUE)
-  if (extend) seq(floor(lo), ceiling(hi)) else seq(ceiling(lo), floor(hi))
+is_outlier <- function(x, ...) {
+  tibble(d = x) %>%
+    ggplot(aes(d)) + geom_boxplot(...) -> fig
+  layer_data(fig) %>% as.list() -> d
+  x < d$xmin | x > d$xmax
 }
 
 #' Appends a note about that.
