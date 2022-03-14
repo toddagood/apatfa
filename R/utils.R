@@ -227,7 +227,9 @@ as_flextable_aov <- function(x) {
     # Italicize statistics in the header.
     x <- italic(x, j = seq.int(2, ncol), part = "header")
     # Italicize variables in the first body column.
-    x <- italic(x, i = seq.int(1, b_nrow - 1), j = 1, part = "body")
+    if (b_nrow > 1) {
+      x <- italic(x, i = seq.int(1, b_nrow - 1), j = 1, part = "body")
+    }
     # Use special formatting for p values.
     x <- mk_par(x, j = "p.value", part = "body", use_dot = TRUE,
                 value = pval_pars(.))
@@ -337,6 +339,24 @@ as_flextable.power.htest <- function(x) {
     # Use special formatting for the power values.
     mk_par(j = "Power", part = "body", use_dot = TRUE,
            value = pval_pars(., with_p = FALSE))
+}
+
+#' Converts a Levene Test to a flextable.
+#'
+#' @param x A Levene test.
+#'
+#' @return A flextable.
+#' @export
+as_flextable_leveneTest <- function(x) {
+  mutate(x, Term = c("Group", "Residuals"), .before = 1) %>%
+    flextable() %>%
+    italic(i = 1, j = 1) %>%
+    set_header_labels(`F value` = "F", `Pr(>F)` = "Sig.") %>%
+    italic(j = 2:4, part = "header") %>%
+    colformat_double(na_str = "") %>%
+    mk_par(j = "Pr(>F)", part = "body", use_dot = TRUE,
+           value = pval_pars(.)) %>%
+    autofit_width()
 }
 
 #' Converts an raov to a flextable.
@@ -650,15 +670,22 @@ integers_in_range <- function(x, extend = FALSE) {
 #' Appends a note about that.
 #'
 #' @param notes The notes.
-#' @param that That to note.
+#' @param ... That to note.
 #'
 #' @return The notes, with a note about that appended.
 #' @export
-note_that <- function(notes, that) {
-  if(!is.null(notes) && nchar(notes) > 0)
-    paste0(notes, "  ", that)
+note_that <- function(notes = NULL, ...) {
+  paste(...) -> that
+  if(!is.null(notes) && nchar(notes) > 0 &&
+     substr(notes, nchar(notes), nchar(notes)) == ".")
+    paste(c(notes, that), collapse = "  ") -> notes
   else
-    that
+    paste(c(notes, that), collapse = " ") -> notes
+  if(!is.null(notes) && nchar(notes) > 0 &&
+     substr(notes, nchar(notes), nchar(notes)) != ".")
+    paste0(notes, ".")
+  else
+    notes
 }
 
 #' Performs a correlation test and appends a note about it.
@@ -809,7 +836,8 @@ out_of_date <- function(target, dependency) {
 #' @export
 pval_pars <- function(pvals, with_p = TRUE) {
   # Start with pvalue format.
-  z <- pvalue_format(prefix = c("<", "=", ">"))(pvals)
+  eq <- if(with_p) "=" else ""
+  z <- pvalue_format(prefix = c("<", eq, ">"))(pvals)
   # Remove the leading zeros.
   z <- gsub("0\\.", ".", z)
   if (with_p) {
