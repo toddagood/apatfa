@@ -1,3 +1,6 @@
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/toddagood/apatfa/workflows/R-CMD-check/badge.svg)](https://github.com/toddagood/apatfa/actions)
+<!-- badges: end -->
 
 apatfa is an R package that generates tables, figures, and appendix sections
 following APA 7 conventions.
