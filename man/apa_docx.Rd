@@ -3,31 +3,34 @@
 \name{apa_docx}
 \alias{apa_docx}
 \title{Creates an docx file with APA sections containing bookmarked
-table, figure, and appendix content}
+table, figure, and appendix content.}
 \usage{
 apa_docx(
   path = NULL,
   target = NULL,
   here = NULL,
   do_print = TRUE,
-  do_browse = TRUE
+  do_browse = TRUE,
+  drop = FALSE
 )
 }
 \arguments{
-\item{path}{Path to the input docx file}
+\item{path}{Path to the input docx file.}
 
-\item{target}{Path to the output docx file}
+\item{target}{Path to the output docx file.}
 
-\item{here}{Find the input docx file beside getSrcFilename(here)}
+\item{here}{Find the input docx file beside getSrcFilename(here).}
 
-\item{do_print}{If TRUE, the docx will be printed to the target}
+\item{do_print}{If TRUE, the docx will be printed to the target.}
 
-\item{do_browse}{If TRUE, also browse the target}
+\item{do_browse}{If TRUE, also browse the target.}
+
+\item{drop}{If TRUE, drop content not referenced by any bookmark.}
 }
 \value{
 The output rdocx document
 }
 \description{
 Creates an docx file with APA sections containing bookmarked
-table, figure, and appendix content
+table, figure, and appendix content.
 }

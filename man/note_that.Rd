@@ -4,12 +4,12 @@
 \alias{note_that}
 \title{Appends a note about that.}
 \usage{
-note_that(notes, that)
+note_that(notes = NULL, ...)
 }
 \arguments{
 \item{notes}{The notes.}
 
-\item{that}{That to note.}
+\item{...}{That to note.}
 }
 \value{
 The notes, with a note about that appended.
