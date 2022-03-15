@@ -42,8 +42,8 @@ supports that and does it by default.
 The `apatfa` package uses the `officer` package to read and write docx
 files, uses the `flextable` package to style tables, and uses the
 `ggplot2` package to style figures.  I really appreciate the work
-of David Gohel and the other contributors to the officer and
-flextable packages.
+of David Gohel and the other contributors to the `officer` and
+`flextable` packages.
 
 
 Here are the basic steps for using `apatfa` to create a paper:
@@ -106,7 +106,7 @@ Here are the basic steps for using `apatfa` to create a paper:
     an APA styled flextable.  Numeric columns will be center-aligned
     and decimal aligned by default.  The `styles` list will control other
     styling options.  The styling can also be touched-up using
-    flextable functions if needed.
+    `flextable` functions if needed.
   * Short-cuts are available to create specially formatted analysis
     result tables.  For example: `aov(...) %>% as_flextable_aov()`.
   * Call `add_table(x, bookmark, title, styles, notes = NULL, wide = FALSE, ...)`
@@ -126,7 +126,7 @@ Here are the basic steps for using `apatfa` to create a paper:
     to add a bookmarked appendix.  The bookmark string must start
     with "a" (for appendix) and be less than 40 characters long.
     The `fun` function must accept an
-    rdocx object and use commands from the officer
+    rdocx object and use commands from the `officer`
     package to add appendix content and return the updated rdocx object.
     Within the `fun` function, you can use add_md_normal() to add 'Normal'
     style paragraphs to the appendix with markdown styling support
