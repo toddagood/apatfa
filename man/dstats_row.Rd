@@ -12,7 +12,7 @@ dstats_row(name, df)
 \item{df}{The data frame.}
 }
 \value{
-A tibble row of descriptive statistics for the named variable.
+A tibble row of descriptive statistics for the variable.
 }
 \description{
 The first column will be named "Variable" and will contain

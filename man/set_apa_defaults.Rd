@@ -10,6 +10,7 @@ set_apa_defaults(
   nan_str = "NaN",
   fmt_datetime = "\%Y-\%m-\%d \%H:\%M:\%S \%Z",
   fig_theme = ggplot2::theme(),
+  styles = get_styles(),
   ...
 )
 }
@@ -23,6 +24,8 @@ set_apa_defaults(
 \item{fmt_datetime}{format string for datatime values}
 
 \item{fig_theme}{additional ggplot2::theme settings for figures}
+
+\item{styles}{Styles to use.}
 
 \item{...}{args to pass to set_flextable_defaults()}
 }

@@ -15,6 +15,6 @@ add_styling(styles, df)
 Updated styles.
 }
 \description{
-Factor and logical columns will use mono face for values.  All column
-names will be in italics.
+Factor and logical columns will use mono face for values.  All
+column names will be in italics.
 }

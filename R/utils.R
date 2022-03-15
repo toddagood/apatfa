@@ -1,23 +1,4 @@
-
 #' Adds a stats::anova(fit1, fit2) table.
-#'
-#' @import broom
-#' @import dplyr
-#' @import flextable
-#' @importFrom ftExtra as_paragraph_md
-#' @import ggplot2
-#' @importFrom graphics abline
-#' @importFrom grid rasterGrob
-#' @importFrom gtools capwords
-#' @importFrom moments kurtosis skewness
-#' @import officer
-#' @importFrom purrr flatten keep map map_chr map_depth
-#' @importFrom scales pvalue_format
-#' @importFrom stats AIC BIC formula hatvalues logLik nobs
-#' @importFrom stats predict quantile rstandard sd setNames shapiro.test
-#' @import tibble
-#' @import tidyr
-#' @importFrom utils flush.console
 #'
 #' @param x An anova comparing fit1 to fit2.
 #' @param ... Args for add_table().
@@ -31,7 +12,7 @@ add_anova_table <- function(x, ...) {
   x <- italic(x, j = 2:6, part = "header")
   x <- colformat_double(x, j = 3:5, na_str = "")
   x <- mk_par(x, j = 6, part = "body", use_dot = TRUE,
-              value = pval_pars(.))
+              value = pval_pars(.data$.))
   x <- add_footer_lines(x, models)
   x <- autofit(x)
   add_table(x, ...)
@@ -149,7 +130,10 @@ add_lm_table <- function(x, ...) {
   x <- as_flextable(x)
   ncol <- ncol_keys(x)
   b_nrow <- nrow_part(x, "body")
-  x <- set_header_labels(x, term = "Term", std.error = "SE", statistic = "t")
+  x <- set_header_labels(x,
+                         term = "Term",
+                         std.error = "SE",
+                         statistic = "t")
   x <- italic(x, j = 2:ncol, part = "header")
   if (b_nrow > 1) x <- italic(x, i = 2:b_nrow, j = 1, part = "body")
   x <- autofit_width(x)
@@ -177,7 +161,10 @@ add_glm_table <- function(x, ...) {
   x <- as_flextable(x)
   ncol <- ncol_keys(x)
   b_nrow <- nrow_part(x, "body")
-  x <- set_header_labels(x, term = "Term", std.error = "SE", statistic = "z")
+  x <- set_header_labels(x,
+                         term = "Term",
+                         std.error = "SE",
+                         statistic = "z")
   x <- italic(x, j = 2:ncol, part = "header")
   if (b_nrow > 1) x <- italic(x, i = 2:b_nrow, j = 1, part = "body")
   x <- mk_par(x, i = 2, j = 1, value = as_paragraph_md(glanced),
@@ -189,8 +176,8 @@ add_glm_table <- function(x, ...) {
 
 #' Adds styling for the columns of a data frame.
 #'
-#' Factor and logical columns will use mono face for values.  All column
-#' names will be in italics.
+#' Factor and logical columns will use mono face for values.  All
+#' column names will be in italics.
 #'
 #' @param styles Existing styles.
 #' @param df The data frame to add.
@@ -221,8 +208,12 @@ as_flextable_aov <- function(x) {
     # Round doubles to three digits.
     x <- colformat_double(x, na_str = "")
     # Improve header labels.
-    x <- set_header_labels(x, term = "Term", `df` = "Df", sumsq = "Sum Sq",
-                           meansq = "Mean Sq", statistic = "F",
+    x <- set_header_labels(x,
+                           term = "Term",
+                           `df` = "Df",
+                           sumsq = "Sum Sq",
+                           meansq = "Mean Sq",
+                           statistic = "F",
                            p.value = "Sig.")
     # Italicize statistics in the header.
     x <- italic(x, j = seq.int(2, ncol), part = "header")
@@ -232,7 +223,7 @@ as_flextable_aov <- function(x) {
     }
     # Use special formatting for p values.
     x <- mk_par(x, j = "p.value", part = "body", use_dot = TRUE,
-                value = pval_pars(.))
+                value = pval_pars(.data$.))
     # Fit to width.
     return(autofit_width(x))
   }
@@ -259,7 +250,8 @@ as_flextable.effectsize_anova <- function(x) {
     return(autofit_width(x))
   }
   x %>%
-    rename_with(function(ns) gsub("CI_", "Conf ", ns, fixed = TRUE)) %>%
+    rename_with(
+      function(ns) gsub("CI_", "Conf ", ns, fixed = TRUE)) %>%
     select(-c("CI")) %>%
     rename_with(function(ns) map_chr(ns, title_case)) %>%
     flextable() %>%
@@ -285,7 +277,7 @@ as_flextable_htest <- function(htest) {
     x <- italic(x, j = 1:3, part = "header")
     # Use special formatting for p values.
     x <- mk_par(x, j = "p.value", part = "body", use_dot = TRUE,
-                value = pval_pars(.))
+                value = pval_pars(.data$.))
     # Fit to width.
     return(autofit_width(x))
   }
@@ -338,7 +330,7 @@ as_flextable.power.htest <- function(x) {
     colformat_double() %>%
     # Use special formatting for the power values.
     mk_par(j = "Power", part = "body", use_dot = TRUE,
-           value = pval_pars(., with_p = FALSE))
+           value = pval_pars(.data$., with_p = FALSE))
 }
 
 #' Converts a Levene Test to a flextable.
@@ -355,7 +347,7 @@ as_flextable_leveneTest <- function(x) {
     italic(j = 2:4, part = "header") %>%
     colformat_double(na_str = "") %>%
     mk_par(j = "Pr(>F)", part = "body", use_dot = TRUE,
-           value = pval_pars(.)) %>%
+           value = pval_pars(.data$.)) %>%
     autofit_width()
 }
 
@@ -379,7 +371,7 @@ as_flextable.raov <- function(x, effect_size) {
     x <- italic(x, j = 1, part = "body")
     # Use special formatting for p values.
     x <- mk_par(x, j = "p-value", part = "body", use_dot = TRUE,
-                value = pval_pars(.))
+                value = pval_pars(.data$.))
     # Fit to width.
     return(autofit_width(x))
   }
@@ -399,7 +391,7 @@ as_flextable.raov <- function(x, effect_size) {
 #' @return A flextable.
 #' @export
 as_flextable.summary.rfit <- function(x) {
-  styler <- function(x, R2) {
+  styler <- function(x) {
     # Get number of body rows.
     b_nrow <- nrow_part(x, "body")
     # Round doubles to three digits.
@@ -413,10 +405,7 @@ as_flextable.summary.rfit <- function(x) {
     x <- italic(x, i = seq.int(2, b_nrow), j = 1, part = "body")
     # Use special formatting for p values.
     x <- mk_par(x, j = "p.value", part = "body", use_dot = TRUE,
-                value = pval_pars(.))
-    # Add multiple R squared in the footer.
-    x <- add_footer_lines(x, values = paste("Multiple R-squared (Robust):",
-                                            round(R2, 2)))
+                value = pval_pars(.data$.))
     # Highlight significant results.
     # x <- highlight(x, ~ p.value < 0.05, ~ p.value)
     # Fit to width.
@@ -426,7 +415,7 @@ as_flextable.summary.rfit <- function(x) {
     as_tibble() %>%
     add_column(Term = rownames(x$coefficients), .before = 1) %>%
     flextable() %>%
-    styler(x$R2)
+    styler()
 }
 
 #' Converts a TukeyHSD to a flextable.
@@ -442,7 +431,7 @@ as_flextable.TukeyHSD <- function(x) {
     x <- italic(x, j = 3:7, part = "header")
     # Use special formatting for p values.
     x <- mk_par(x, j = 7, part = "body", use_dot = TRUE,
-                value = pval_pars(.))
+                value = pval_pars(.data$.))
     # Italicize the variable in the body.
     x <- italic(x, j = 1, part = "body")
     # Fit to width.
@@ -493,16 +482,16 @@ dstats <- function(v) {
   quantile(v, names = FALSE, na.rm = TRUE) %>%
     setNames(c("Min", "Q1", "Median", "Q3", "Max")) %>%
     as_tibble_row() %>%
-    add_column(n = length(v),
-               NAs = sum(is.na(v)),
-               .before = 1) %>%
-    add_column(Mean = mean(v, na.rm = TRUE),
-               .after = "Median") %>%
-    add_column(Range = .[["Max"]] - .[["Min"]],
-               IQR = .[["Q3"]] - .[["Q1"]],
-               SD = sd(v, na.rm = TRUE),
-               Skewness = skewness(v, na.rm = TRUE),
-               Kurtosis = kurtosis(v, na.rm = TRUE))
+    mutate(n = length(v),
+           NAs = sum(is.na(v)),
+           .before = 1) %>%
+    mutate(Mean = mean(v, na.rm = TRUE),
+           .after = "Median") %>%
+    mutate(Range = .data$Max - .data$Min,
+           IQR = .data$Q3 - .data$Q1,
+           SD = sd(v, na.rm = TRUE),
+           Skewness = skewness(v, na.rm = TRUE),
+           Kurtosis = kurtosis(v, na.rm = TRUE))
 }
 
 #' Gets a tibble row summarizing the statistics of a named variable.
@@ -514,7 +503,7 @@ dstats <- function(v) {
 #' @param name The variable name.
 #' @param df The data frame.
 #'
-#' @return A tibble row of descriptive statistics for the named variable.
+#' @return A tibble row of descriptive statistics for the variable.
 #' @export
 #'
 #' @examples
@@ -533,14 +522,15 @@ dstats_row <- function(name, df) {
 #' @export
 get_styles <- function() {
   list(
+    device = "win",
     italic.cols = c("n", "N", "NAs",
                     "Min", "Q1", "Median", "Mean", "Q3", "Max",
                     "Range", "IQR", "SD", "Skewness", "Kurtosis",
                     "p", "r", "t", "H", "W", "F", "df"),
     mono.cols = c(),
     mono.fontname = "Courier New",
-    mono.fontsize = 12,
-    mono.fontsize.geom_text = 12 * 0.3,
+    mono.fontsize = 10,
+    mono.fontsize.geom_text = 10 * 0.3,
     mono = element_text(family = "Courier New"),
     bold = element_text(face = "bold"),
     bold.italic = element_text(face = "bold.italic"),
@@ -643,7 +633,10 @@ integers_in_extended_range <-
 integers_in_range <- function(x, extend = FALSE) {
   lo <- min(x, na.rm = TRUE)
   hi <- max(x, na.rm = TRUE)
-  if (extend) seq(floor(lo), ceiling(hi)) else seq(ceiling(lo), floor(hi))
+  if (extend)
+    seq(floor(lo), ceiling(hi))
+  else
+    seq(ceiling(lo), floor(hi))
 }
 
 #' Runs a Shapiro-Wilk test of normality.
@@ -735,14 +728,12 @@ note_cor_test <- function(notes, df, x, y, alpha = 0.05, ...) {
 #' @return The notes, with a note about an estimate appended.
 #' @export
 note_estimate_htest <- function(notes, h) {
-  name <- h$estimate %>% attr("name") %>% gsub("cor", "r", .)
+  name <- gsub("cor", "r", h$estimate %>% attr("name"))
   format(h$estimate, digits = 2) -> val
-  ifelse(name == "r",
-         val %>%
-           gsub("^0\\.", ".", .) %>%
-           gsub("^-0\\.", "-.", .),
-         val) %>%
-    paste0(name, "(", h$parameter, ")=", .) -> note
+  paste0(name, "(", h$parameter, ")=",
+         ifelse(name == "r",
+                gsub("^-0\\.", "-.", gsub("^0\\.", ".", val)),
+                val)) -> note
   if(!is.null(notes) && nchar(notes) > 0)
     paste0(notes, ", ", note)
   else
@@ -769,9 +760,9 @@ note_intro <- function(notes) {
 #' @return The notes, with a note about a p value appended.
 #' @export
 note_p_value <- function(notes, p) {
-  scales::pvalue_format(prefix = c("<", "=", ">"))(p) %>%
-    gsub("^(.)0\\.", "\\1.", .) %>%
-    paste0("p", .) -> note
+  scales::pvalue_format(prefix = c("<", "=", ">"))(p) -> note
+  gsub("^(.)0\\.", "\\1.", note) -> note
+  paste0("p", note) -> note
   if(!is.null(notes) && nchar(notes) > 0)
     paste0(notes, ", ", note)
   else
@@ -787,8 +778,8 @@ note_p_value <- function(notes, p) {
 #' @export
 note_statistic_htest <- function(notes, h) {
   name <- h$statistic %>% attr("name")
-  format(h$statistic, digits = 2) %>%
-    paste0(name, "(", h$parameter, ")=", .) -> note
+  format(h$statistic, digits = 2) -> note
+  paste0(name, "(", h$parameter, ")=", note) -> note
   if(!is.null(notes) && nchar(notes) > 0)
     paste0(notes, ", ", note)
   else
@@ -803,18 +794,17 @@ note_statistic_htest <- function(notes, h) {
 #'
 #' @return The previous notes with a normality note appended.
 #' @export
-note_normal <- function(notes = NULL, alpha = 0.05, what = "Coloring") {
-  note <-
-      paste(
-        what,
+note_normal <- function(notes = NULL, alpha = 0.05,
+                        what = "Coloring") {
+  paste(what,
         "indicated if a Shapiro-Wilk test of normality",
         "failed to reject the null hypothesis that the data were",
         "sampled from a population that was normally distributed",
         paste0("(p>", alpha, ").")
-      )
-    ifelse(is.null(notes) || (nchar(notes) == 0),
-           note, paste0(notes, "  ", note))
-  }
+  ) -> note
+  ifelse(is.null(notes) || (nchar(notes) == 0),
+         note, paste0(notes, "  ", note))
+}
 
 #' Performs a dependency check.
 #'
@@ -984,7 +974,7 @@ styler_with_spanner <- function(x, styles, spanner) {
   styler(x, styles, i = is_not_spanner) %>%
     align(i = is_spanner, align = "center") %>%
     mk_par(i = is_spanner, use_dot = TRUE,
-           value = as_paragraph(spanner, ": ", as_i(.))) %>%
+           value = as_paragraph(spanner, ": ", as_i(.data$.))) %>%
     autofit_width()
 }
 
@@ -997,11 +987,15 @@ styler_with_spanner <- function(x, styles, spanner) {
 title_case <- function(title) {
   s <- strsplit(strsplit(title, " ")[[1]], "-")
   wf <- function(w) {
-    ifelse(w %in% c("and", "as", "but", "for", "if", "nor", "or", "so",
-                    "yet", "a", "an", "the", "as", "at", "by", "for", "in",
-                    "of", "off", "on", "per", "to", "up", "via"),
-           w,
-           paste0(toupper(substring(w, 1, 1)), substring(w, 2)))
+    ifelse(
+      w %in% c(
+        "a", "an", "and", "as", "at", "but", "by", "for", "if", "in",
+        "nor", "of", "off", "on", "or", "per", "so", "the", "to",
+        "up", "via", "yet"
+      ),
+      w,
+      paste0(toupper(substring(w, 1, 1)), substring(w, 2))
+    )
   }
   map_depth(s, 1, wf) %>%
     map_depth(1, paste, collapse = "-") %>%
@@ -1017,10 +1011,9 @@ title_case <- function(title) {
 #'
 #' @export
 title_n <- function(title = NULL, df, n = "n") {
-  msg <-
-    nrow(df) %>%
-    format(big.mark = ",") %>%
-    paste0("(", n, " = ", . , ")")
+  nrow(df) %>%
+    format(big.mark = ",") -> msg
+  paste0("(", n, " = ", msg , ")") -> msg
   ifelse(is.null(title) || (nchar(title) == 0),
          msg, paste(title, msg))
 }

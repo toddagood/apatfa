@@ -1,3 +1,13 @@
+# Planned enhancement:
+# Also use the styles list to italicize statistics and variable names
+# in axis titles and the legend title, similar to
+# ggtext::element_markup() but driving the formatting from a styles list
+# without requiring any markup.  Also use mono font for factor values
+# in the axis text and legend text based on the styles list.  Today
+# these can mostly be handled manually by applying themes to the axes
+# and legend, but some things cannot be handled, such as italicizing
+# only a variable name within a longer axis title.
+
 #' Initializes the list of tables, figures, and appendices
 #' @export
 init_tfas <- identity # Stubbed function
@@ -19,8 +29,6 @@ set_tfas <- get_tfas <- identity # Stubbed functions
   # Initializes the tfas
   init_tfas <<- function() {
     tfas <<- list()
-    # Load windows fonts.
-    extrafont::loadfonts(device = "win", quiet = TRUE)
   }
   # Sets the tfas
   set_tfas <<- function(val) {
@@ -79,7 +87,7 @@ theme_apa <- function (x) {
     x <- flextable::align(x, j = 1, align = "left", part = "body")
     # Adjust left padding to align numbers on the decimal point.
     ds <- x$body$dataset[x$col_keys]
-    which_j <- which(sapply(ds, function(x) is.numeric(x)))
+    which_j <- which(vapply(ds, is.numeric, c(TRUE)))
     purrr::walk(which_j, function(j) {
       content <- x$body$content[[1]]$data[,x$col_keys[[j]]]
       cnt <- purrr::map_int(content, function(d) nchar(d[["txt"]]))
@@ -106,6 +114,7 @@ theme_apa <- function (x) {
 #' @param nan_str string to be used for NaN values in tables
 #' @param fmt_datetime format string for datatime values
 #' @param fig_theme additional ggplot2::theme settings for figures
+#' @param styles Styles to use.
 #' @param ... args to pass to set_flextable_defaults()
 #' @export
 set_apa_defaults <- function(digits = 2,
@@ -113,7 +122,9 @@ set_apa_defaults <- function(digits = 2,
                              nan_str = "NaN",
                              fmt_datetime = "%Y-%m-%d %H:%M:%S %Z",
                              fig_theme = ggplot2::theme(),
+                             styles = get_styles(),
                              ...) {
+  extrafont::loadfonts(device = styles$device, quiet = TRUE)
   flextable::set_flextable_defaults(theme_fun = theme_apa,
                                     font.family = "Times New Roman",
                                     font.size = 12,
@@ -131,9 +142,9 @@ set_apa_defaults <- function(digits = 2,
                    panel.border = ggplot2::element_rect(fill = NA),
                    legend.direction = "horizontal",
                    legend.position = "top",
-                   legend.text = ggplot2::element_text(family = "Courier New"),
-                   legend.title = ggplot2::element_text(face = "bold.italic"),
-                   strip.text = ggplot2::element_text(family = "Courier New")) +
+                   legend.text = styles$mono,
+                   legend.title = styles$bold.italic,
+                   strip.text = styles$mono) +
     fig_theme
   ggplot2::theme_set(fig_theme)
   return()
@@ -195,8 +206,8 @@ note_table <- function(notes, styles, as_title = FALSE) {
                             font.size = defaults$font.size,
                             italic = FALSE)
   iprops <- stats::update(props, italic = TRUE)
-  gregexpr("\\b", notes, perl = TRUE) %>%
-    regmatches(notes, ., invert = TRUE) %>%
+  gregexpr("\\b", notes, perl = TRUE) -> m
+  regmatches(notes, m, invert = TRUE) %>%
     lapply(function(z) {z[z != ""]}) -> notes_chunks
 
   map(notes_chunks, function(note_chunks) {
@@ -217,7 +228,6 @@ note_table <- function(notes, styles, as_title = FALSE) {
     mk_par(value = paras)
 }
 
-#' @importFrom gdtools m_str_extents
 note_widths <- function(x) {
   x$body$content[[1]]$data %>%
     tibble() %>%
@@ -300,7 +310,7 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
     abookmarks <- c(abookmarks, setdiff(aobjs, abookmarks))
   }
   # The output file will initially be a copy of the input file
-  # but with all body content removed.  Use an {INCLUDETExT}
+  # but with all body content removed.  Use an {INCLUDETEXT}
   # field in Word to include the output file at the end of the
   # input file.
   while(length(x)>1) {
@@ -335,12 +345,12 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
                                  style = "caption")
       x <- officer::body_bookmark(x, bookmark)
       x <- table_adder(x, list(ft = obj$title))
-      fp_p = officer::fp_par(line_spacing = 0)
+      fp_p <- officer::fp_par(line_spacing = 0)
       blank_line <- officer::fpar("", fp_p = fp_p)
       x <- officer::body_add_fpar(x, blank_line)
       x <- item$adder(x, obj, i)
       if (!is.null(obj$notes)) {
-        fp_p = officer::fp_par(line_spacing = 1)
+        fp_p <- officer::fp_par(line_spacing = 1)
         blank_line <- officer::fpar("", fp_p = fp_p)
         x <- officer::body_add_fpar(x, blank_line)
         x <- table_adder(x, list(ft = obj$notes))
@@ -436,7 +446,7 @@ begin_figure <- function(bookmark,
     }
   title %>% note_widths() -> nws
   tibble(w = nws) %>%
-    mutate(nlines = as.integer(w / width + 1)) %>%
+    mutate(nlines = as.integer(.data$w / width + 1)) %>%
     summarize(nlines = sum(nlines)) %>%
     pull(nlines) -> nlines
   extra_lines <- extra_lines + (nlines - 1)
@@ -450,7 +460,7 @@ begin_figure <- function(bookmark,
       }
     notes %>% note_widths() -> nws
     tibble(w = nws) %>%
-      mutate(nlines = as.integer(w / width + 1)) %>%
+      mutate(nlines = as.integer(.data$w / width + 1)) %>%
       summarize(nlines = sum(nlines)) %>%
       pull(nlines) -> nlines
     extra_lines <- extra_lines + nlines
@@ -463,7 +473,7 @@ begin_figure <- function(bookmark,
   meta_file <- file.path(fig_dir, paste0(bookmark, ".meta"))
   svg_file <- normalizePath(svg_file, "/", mustWork = FALSE)
   grDevices::svg(svg_file, width = width, height = height)
-  extrafont::loadfonts(device = "win", quiet = TRUE)
+  extrafont::loadfonts(device = styles$device, quiet = TRUE)
   obj <- list(title = title, wide = wide, notes = notes,
               img = svg_file, width = width, height = height)
   save(obj, file = meta_file)
@@ -573,8 +583,6 @@ rotate_header <- function(x, rotation = "tbrl", align = "right") {
 #' @param body_only Only use the body for measuring pretty widths
 #' @return A flextable
 #' @export
-#'
-#' @importFrom rlang .data
 autofit_width <- function(x, body_only = FALSE) {
   stopifnot(inherits(x, "flextable"))
   if (!inherits(x$body$dataset, "grouped_data")) {
