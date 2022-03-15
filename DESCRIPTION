@@ -1,6 +1,6 @@
 Package: apatfa
 Title: Generates APA Tables, Figures, and Appendix Sections
-Version: 0.7.1
+Version: 0.8.1
 Authors@R: 
     person(given = "Todd",
            family = "Goodrich",
