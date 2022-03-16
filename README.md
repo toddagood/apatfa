@@ -112,22 +112,20 @@ extrafont::fonts()
         other styling options. The styling can also be touched-up using
         `flextable` functions if needed.
     -   Short-cuts are available to create specially formatted analysis
-        result tables. For example: `aov(...) %>% as_flextable_aov()`.
+        result tables. For example: `aov(...) %>%   as_flextable_aov()`.
     -   Call
-        `add_table(x, bookmark, title, styles, notes = NULL, wide = FALSE, ...)`
+        `add_table(x, bookmark, title, styles, notes = NULL,   wide = FALSE, ...)`
         to add an APA styled flextable, `x`, as a bookmarked table with
         the given `title`, `styles`, and `notes`. If the table is wide,
         use `wide = TRUE` to display that table in landscape
         orientation. There are functions available to assist with
         preparing the title and notes args. The `bookmark` string must
         start with “t” (for table) and be less than 40 characters long.
-    -   Call
-        `add_figure(fig, bookmark, title, styles, notes = NULL, wide = FALSE, ...)`
-        to add a ggplot as a bookmarked figure with the given `title`,
-        `styles`, and `notes`. If the figure is wide, use `wide = TRUE`
-        to display that figure in landscape orientation. The `bookmark`
-        string must start with “f” (for figure) and be less than 40
-        characters long.
+    -   Call `add_figure(fig, bookmark, title, styles, ...)` to add a
+        ggplot as a bookmarked figure with the given `title`, `styles`,
+        and `notes`. If the figure is wide, use `wide = TRUE` to display
+        that figure in landscape orientation. The `bookmark` string must
+        start with “f” (for figure) and be less than 40 characters long.
     -   Call `add_appendix(bookmark, fun, wide = FALSE)` to add a
         bookmarked appendix. The bookmark string must start with “a”
         (for appendix) and be less than 40 characters long. The `fun`
@@ -143,20 +141,21 @@ extrafont::fonts()
     -   Call `apa_docx("input_file.docx", "output_file.docx")` which
         will read the bookmark references from the input docx file and
         generate the output docx file with the referenced tables,
-        figures, and appendices arranged in the right order. As a
-        short-hand notation, calling `apa_docx(here = function() {})`
-        from within an R script named `paper_name.R` will automatically
-        use `paper_name.docx` as the input file and
-        `paper_name.tfa.docx` as the output file. So a convenient
-        approach is to create an R project per paper and name the input
-        files `paper.docx` and `paper.R` and the output file will be
-        `paper.tfa.docx`, which you will include into `paper.docx`. If
-        you follow those conventions, then you can also use a relative
-        path name in the `IncludeText` field as follows:
-        `{ IncludeText "{ FileName \p }/../{ FileName }.tfa.docx" }`.
-        Use `Ctrl-F9` to insert the outer and inner braces (don’t type
-        them directly since they are special), and type the rest
-        verbatim.
+        figures, and appendices arranged in the right order.
+        -   As a short-hand notation, calling
+            `apa_docx(here = function() {})` from within an R script
+            named `paper.R` will automatically use `paper.docx` as the
+            input file and `paper.tfa.docx` as the output file.
+        -   A convenient approach is to create an R project per paper
+            and name the input files `paper.docx` and `paper.R` and the
+            output file will be `paper.tfa.docx`, which you will include
+            into `paper.docx`.
+        -   If you follow those conventions, then you can also use a
+            relative path name in the `IncludeText` field as follows:
+            `{ IncludeText "{ FileName \p }/../paper.tfa.docx" }`. Use
+            `Ctrl-F9` to insert the outer and inner braces (don’t type
+            them directly since they are special), and type the rest
+            verbatim.
 
 -   Once the output file has been generated, open the input docx file,
     and if the `IncludeText` field does not auto-update then press
