@@ -2,18 +2,20 @@
 % Please edit documentation in R/apatfa.R
 \name{add_code_file}
 \alias{add_code_file}
-\title{Adds the text of a code file in a mono 10pt font, single-spaced}
+\title{Adds the text of a code file in a mono 10pt font, single-spaced.}
 \usage{
-add_code_file(x, file_name)
+add_code_file(x, file_name, head = FALSE)
 }
 \arguments{
-\item{x}{the rdocx document}
+\item{x}{The rdocx document.}
 
-\item{file_name}{the name of the code file}
+\item{file_name}{The name of the code file.}
+
+\item{head}{If TRUE, only add the first few lines of the file.}
 }
 \value{
-the rdocx document
+The rdocx document.
 }
 \description{
-Adds the text of a code file in a mono 10pt font, single-spaced
+Adds the text of a code file in a mono 10pt font, single-spaced.
 }

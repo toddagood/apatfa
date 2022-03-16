@@ -60,36 +60,44 @@ if (Final <- TRUE) {
 #######################################################################
 # Add styling for your own data frame.
 #######################################################################
+gsub("[.]", "", names(iris)) -> names(iris)
 styles %>% add_styling(iris) -> styles
 
 #######################################################################
-title <- title_n("Statistics for Iris Petal Sizes by Species", iris)
+title <- title_n("Statistics for iris$PetalWidth by Species", iris)
 #######################################################################
-map_dfr(names(iris)[1:4], function(name) {
-  dstats_row(name, group_by(iris, Species)) %>%
-    ungroup() %>%
-    select(Variable, Species, n, Mean, SD, Skewness, Kurtosis)
-}) %>%
-  as_grouped_data(groups = c("Variable")) %>%
-  as_flextable() %>%
+note_that("Group sizes were balanced.") %>%
+  note_normal("Coloring (blue=Yes, red=No, grey=NA)") %>%
+  note_intro() -> notes
+col_keys <- c("Species", "n", "Mean", "SD", "Skewness", "Kurtosis")
+iris %>%
+  group_by(Species) %>%
+  summarize(dstats = dstats(PetalWidth),
+            Normal = is_normal(PetalWidth)) %>%
+  unnest(dstats) %>%
+  flextable(col_keys = col_keys) %>%
   colformat_double() %>%
-  styler_with_spanner(styles, "Variable") %>%
-  add_table(bookmark = "tStatsPetalSizesBySpecies",
+  bg(j = c("Skewness", "Kurtosis"),
+     source = "Normal",
+     bg = function(Normal) styles$colors.yes_no_na[[Normal]]) %>%
+  styler(styles) %>%
+  add_table(bookmark = "tStatsPetalWidthBySpecies",
             title = title,
             styles = styles,
-            notes = note_intro("Multiple variables were summarized."))
+            notes = notes)
 
 #######################################################################
-title <- title_n("Boxplot of Iris Sepal.Width by Species", iris)
+title <- title_n("Boxplot of iris$PetalWidth by Species", iris)
 #######################################################################
 iris %>%
-  ggplot(aes(Species, Petal.Width)) +
+  ggplot(aes(Species, PetalWidth)) +
   geom_boxplot() +
   theme(axis.text.x = styles$mono) -> fig
-note_that("Outliers were observed for the setosa Species.") %>%
+note_that("Outliers were observed.") %>%
+  note_normal() %>%
   note_intro() -> notes
 add_figure(fig, "fBoxplotPetalWidthBySpecies", title, styles,
-           notes = notes) -> fig
+           notes = notes, wide = TRUE)
 
 #######################################################################
 # Generate sections for Tables, Figures, and Appendices in APA 7 style.
@@ -140,30 +148,7 @@ Here are the basic steps for using `apatfa` to create a paper:
 
 -   To get started, download (usually from your company or institution)
     a Word (docx) file containing a title page template, headers,
-    footers, and pre-defined APA styles for paragraphs and fonts. To
-    achieve seamless operation with `apatfa`, check the following
-    settings within the input docx file:
-
-    -   Ensure that the default paragraph style is named ‘Normal’ and
-        uses the ‘Times New Roman’ 12pt font with double-spaced lines,
-        left-aligned, with 0.5” indentation for the first line.
-    -   Ensure that a paragraph style named ‘Section’ is defined based
-        on the ‘Normal’ style but bold, center-aligned, and with the
-        ‘Begin on new page’ option enabled.
-    -   Ensure that a paragraph style named ‘Caption’ is defined based
-        on the ‘Normal’ style but bold, left-aligned, and with 0”
-        indentation for the first line. Turn off any auto-numbering
-        because `apatfa` will directly number the content in the right
-        order using plain text.
-    -   For convenience, define a font style named ‘Code’ in the
-        ’Courier New” 10pt font and use that to style factor levels and
-        code fragments within the body of the document because `apatfa`
-        will do the same for factor levels in the output tables and
-        figures and for code listings in the appendices.
-    -   Note that you don’t need to worry about defining font settings
-        for figure text because all figures will be in the output docx
-        file only and the figure text will be styled (by default) using
-        Arial 12pt by `apatfa`.
+    footers, and pre-defined APA styles for paragraphs and fonts.
 
 -   Use `Word > Insert > Quick Parts > Field` to insert an
     `{IncludeText "output_file.docx"}` field right after the
@@ -229,11 +214,13 @@ extrafont::fonts()
         (for appendix) and be less than 40 characters long. The `fun`
         function must accept an rdocx object and use commands from the
         `officer` package to add appendix content and return the updated
-        rdocx object. Within the `fun` function, you can use
-        add_md_normal() to add ‘Normal’ style paragraphs to the appendix
-        with markdown styling support and use add_code_file() to add the
-        contents of a source-code file to the appendix as ‘Code’ styled
-        paragraphs (Courier New, 10pt).
+        rdocx object. Within the `fun` function, you may find the
+        following helpful:
+        -   Call `add_md()` to add normal paragraphs to the appendix
+            with markdown styling support (based on the default
+            paragraph style).
+        -   Call `add_code_file()` to add the contents of a source-code
+            file to the appendix (in Courier New, 10pt, single-spaced).
     -   Call `apa_docx("input_file.docx", "output_file.docx")` which
         will read the bookmark references from the input docx file and
         generate the output docx file with the referenced tables,
@@ -244,7 +231,13 @@ extrafont::fonts()
         `paper_name.tfa.docx` as the output file. So a convenient
         approach is to create an R project per paper and name the input
         files `paper.docx` and `paper.R` and the output file will be
-        `paper.tfa.docx`, which you will include into `paper.docx`.
+        `paper.tfa.docx`, which you will include into `paper.docx`. If
+        you follow those conventions, then you can also use a relative
+        path name in the `IncludeText` field as follows:
+        `{ IncludeText "{ FileName \p }/../{ FileName }.tfa.docx" }`.
+        Use `Ctrl-F9` to insert the outer and inner braces (don’t type
+        them directly since they are special), and type the rest
+        verbatim.
 
 -   Once the output file has been generated, open the input docx file,
     and if the `IncludeText` field does not auto-update then press

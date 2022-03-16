@@ -551,7 +551,8 @@ get_styles <- function() {
     portrait.width = 6.5,
     portrait.height = 8.0,
     landscape.width = 9.0,
-    landscape.height = 5.7,
+    landscape.height = 5.5,
+    line.height = 0.4,
     device = "win"
   )
 }
@@ -800,13 +801,13 @@ note_statistic_htest <- function(notes, h) {
 #' Appends a note about a Shapiro-Wilk test of normality.
 #'
 #' @param notes Previous notes.
-#' @param alpha The alpha level used for testing.
 #' @param what The aesthetic used to indicate the test result.
+#' @param alpha The alpha level used for testing.
 #'
 #' @return The previous notes with a normality note appended.
 #' @export
-note_normal <- function(notes = NULL, alpha = 0.05,
-                        what = "Coloring") {
+note_normal <- function(notes = NULL, what = "Coloring",
+                        alpha = 0.05) {
   paste(what,
         "indicated if a Shapiro-Wilk test of normality",
         "failed to reject the null hypothesis that the data were",

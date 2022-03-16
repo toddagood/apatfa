@@ -28,7 +28,7 @@
 #' @importFrom grid rasterGrob
 #' @importFrom gtools capwords
 #' @importFrom moments kurtosis skewness
-#' @importFrom officer fp_text_lite
+#' @importFrom officer docx_dim fp_text_lite styles_info
 #' @importFrom purrr flatten keep map map_chr map_depth
 #' @importFrom rlang .data
 #' @importFrom scales pvalue_format
@@ -183,23 +183,41 @@ set_apa_defaults <- function(digits = 2,
   return()
 }
 
-end_portrait <- function (x) {
-  psize <- officer::page_size(width = 8.5, height = 11.0,
+end_portrait <- function (x, type = "nextPage") {
+  d <- docx_dim(x)
+  psize <- officer::page_size(width = d$page["width"],
+                              height = d$page["height"],
                               orient = "portrait")
+  pmar <- officer::page_mar(bottom = d$margins["bottom"],
+                            top = d$margins["top"],
+                            right = d$margins["right"],
+                            left = d$margins["left"],
+                            header = d$margins["header"],
+                            footer = d$margins["footer"],
+                            gutter = 0)
   bs <- officer::block_section(
     officer::prop_section(page_size = psize,
-                          page_margins = officer::page_mar(),
-                          type = "nextPage"))
+                          page_margins = pmar,
+                          type = type))
   officer::body_end_block_section(x, bs)
 }
 
-end_landscape <- function (x) {
-  psize <- officer::page_size(width = 11.0, height = 8.5,
+end_landscape <- function (x, type = "nextPage") {
+  d <- docx_dim(x)
+  psize <- officer::page_size(width = d$page["width"],
+                              height = d$page["height"],
                               orient = "landscape")
+  pmar <- officer::page_mar(bottom = d$margins["bottom"],
+                            top = d$margins["top"],
+                            right = d$margins["right"],
+                            left = d$margins["left"],
+                            header = d$margins["header"],
+                            footer = d$margins["footer"],
+                            gutter = 0)
   bs <- officer::block_section(
     officer::prop_section(page_size = psize,
-                          page_margins = officer::page_mar(),
-                          type = "nextPage"))
+                          page_margins = pmar,
+                          type = type))
   officer::body_end_block_section(x, bs)
 }
 
@@ -209,7 +227,9 @@ table_adder <- function(x, obj, ...) {
 
 figure_adder <- function(x, obj, i) {
   if (i == 1) {
-    obj$height <- obj$height - 0.4
+    # This is the first figure, so reserve one line for the Figures
+    # section heading.
+    obj$height <- obj$height - obj$line.height
   }
   png_file <- paste0(obj$img, ".png")
   rsvg::rsvg_png(obj$img, png_file,
@@ -342,6 +362,9 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
     fbookmarks <- c(fbookmarks, setdiff(fobjs, fbookmarks))
     abookmarks <- c(abookmarks, setdiff(aobjs, abookmarks))
   }
+  # Determine if the document ends in landscape.
+  x <- officer::cursor_end(x)
+  landscape <- docx_dim(x)$landscape
   # The output file will initially be a copy of the input file
   # but with all body content removed.  Use an {INCLUDETEXT}
   # field in Word to include the output file at the end of the
@@ -369,13 +392,22 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
       }
       obj <- tfas[[bookmark]]
       if (i == 1) {
-        if (length(x) == 1 && obj$wide) {
-          x <- end_portrait(x)
+        if (length(x) == 1) {
+          if (xor(obj$wide, landscape)) {
+            x <- end_portrait(x)
+          } else {
+            x <- officer::body_add_break(x)
+          }
         }
-        x <- officer::body_add_par(x, section, style = "Section")
+        x <- officer::body_add_par(x, section, style = "heading 1")
       }
-      x <- officer::body_add_par(x, paste(item$caption, i),
-                                 style = "caption")
+      bold_t <- officer::fp_text_lite(bold = TRUE)
+      caption_p <- officer::fp_par(line_spacing = 2,
+                                   keep_with_next = TRUE)
+      caption_fpar <- officer::fpar(paste(item$caption, i),
+                                    fp_p = caption_p,
+                                    fp_t = bold_t)
+      x <- officer::body_add_fpar(x, caption_fpar)
       x <- officer::body_bookmark(x, bookmark)
       x <- table_adder(x, list(ft = obj$title))
       fp_p <- officer::fp_par(line_spacing = 0)
@@ -398,10 +430,12 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
 
   for (i in seq_along(abookmarks)) {
     bookmark <- abookmarks[[i]]
+    brief <- FALSE
     if (bookmark %in% bookmarks) {
       print(paste("Bookmark:", bookmark))
     } else {
       print(paste("Extra Bookmark:", bookmark))
+      brief <- TRUE
     }
     obj <- tfas[[bookmark]]
     if (i == 1) {
@@ -413,11 +447,9 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
     if (length(abookmarks)>1) {
       section <- paste(section, LETTERS[[i]])
     }
-    x <- officer::body_add_par(x, section, style = "Section")
+    x <- officer::body_add_par(x, section, style = "heading 1")
     x <- officer::body_bookmark(x, bookmark)
-    if (bookmark %in% bookmarks) {
-      x <- obj$fun(x)
-    }
+    x <- obj$fun(x, brief = brief)
     if (obj$wide) {
       x <- end_landscape(x)
     } else {
@@ -459,6 +491,12 @@ begin_figure <- function(bookmark,
                          width = NULL,
                          height = NULL,
                          reserve = 0) {
+  if (substr(bookmark, 1, 1) != "f") {
+    stop("bookmark must start with the letter 'f'.")
+  }
+  if (nchar(bookmark) >= 40) {
+    stop("bookmark must be less than 40 characters long.")
+  }
   if (is.null(width)) {
     width <-
       if (wide) styles$landscape.width else styles$portrait.width
@@ -497,7 +535,8 @@ begin_figure <- function(bookmark,
     extra_lines <- extra_lines + nlines
     notes <- notes %>% flextable::width(width = width)
   }
-  height <- height - 0.4 * extra_lines
+  # Reduce the figure height to allow for extra title and notes lines.
+  height <- height - styles$line.height * extra_lines
   fig_dir <- "./Figures"
   dir.create(fig_dir, showWarnings = FALSE)
   svg_file <- file.path(fig_dir, paste0(bookmark, ".svg"))
@@ -506,7 +545,8 @@ begin_figure <- function(bookmark,
   grDevices::svg(svg_file, width = width, height = height)
   extrafont::loadfonts(device = styles$device, quiet = TRUE)
   obj <- list(title = title, wide = wide, notes = notes,
-              img = svg_file, width = width, height = height)
+              img = svg_file, width = width, height = height,
+              line.height = styles$line.height)
   save(obj, file = meta_file)
   tfas <- get_tfas()
   tfas[[bookmark]] <- obj
@@ -675,6 +715,12 @@ add_table <- function(x, bookmark, title, styles,
   if (!inherits(x, "flextable")) {
     stop("add_table supports only flextable objects.")
   }
+  if (substr(bookmark, 1, 1) != "t") {
+    stop("bookmark must start with the letter 't'.")
+  }
+  if (nchar(bookmark) >= 40) {
+    stop("bookmark must be less than 40 characters long.")
+  }
   if (is.null(width)) {
     width <-
       if (wide) styles$landscape.width else styles$portrait.width
@@ -734,7 +780,10 @@ load_table <- function(bookmark) {
 #' @export
 add_appendix <- function(bookmark, fun, wide = FALSE) {
   if (substr(bookmark, 1, 1) != "a") {
-    stop("The bookmark for the appendix must start with the letter a")
+    stop("bookmark must start with the letter 'a'.")
+  }
+  if (nchar(bookmark) >= 40) {
+    stop("bookmark must be less than 40 characters long.")
   }
   obj <- list(wide = wide, fun = fun)
   tfas <- get_tfas()
@@ -743,28 +792,30 @@ add_appendix <- function(bookmark, fun, wide = FALSE) {
   return()
 }
 
-#' Adds markdown content as paragraphs with style = "Normal"
+#' Adds markdown content as paragraphs in the default style.
 #'
-#' @param x the rdocx document
-#' @param ... markdown content
-#' @return the rdocx document
+#' @param x The rdocx document.
+#' @param ... Markdown content.
+#' @return The rdocx document.
 #' @export
-add_md_normal <- function(x, ...) {
-  for(para in md_notes(...)) {
-    x <- officer::body_add_fpar(x, para, style = "Normal")
-  }
-  return(x)
+add_md <- function(x, ...) {
+  def_style <- styles_info(x, type = "paragraph",
+                           is_default = TRUE)[1, "style_name"]
+  paras <- md_notes(...)
+  officer::body_add_blocks(x, do.call(officer::block_list, paras))
 }
 
-#' Adds the text of a code file in a mono 10pt font, single-spaced
+#' Adds the text of a code file in a mono 10pt font, single-spaced.
 #'
-#' @param x the rdocx document
-#' @param file_name the name of the code file
-#' @return the rdocx document
+#' @param x The rdocx document.
+#' @param file_name The name of the code file.
+#' @param head If TRUE, only add the first few lines of the file.
+#' @return The rdocx document.
 #' @export
-add_code_file <- function(x, file_name) {
+add_code_file <- function(x, file_name, head = FALSE) {
   fp_t <- officer::fp_text(font.family = "Courier New", font.size = 10)
-  txt <- readr::read_lines(file_name, lazy = FALSE)
+  txt <- readr::read_lines(file_name, lazy = FALSE,
+                           n_max = ifelse(head, 6, Inf))
   paras <- purrr::map(txt, officer::fpar, fp_t = fp_t)
   officer::body_add_blocks(x, do.call(officer::block_list, paras))
 }

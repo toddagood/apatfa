@@ -4,14 +4,14 @@
 \alias{note_normal}
 \title{Appends a note about a Shapiro-Wilk test of normality.}
 \usage{
-note_normal(notes = NULL, alpha = 0.05, what = "Coloring")
+note_normal(notes = NULL, what = "Coloring", alpha = 0.05)
 }
 \arguments{
 \item{notes}{Previous notes.}
 
-\item{alpha}{The alpha level used for testing.}
-
 \item{what}{The aesthetic used to indicate the test result.}
+
+\item{alpha}{The alpha level used for testing.}
 }
 \value{
 The previous notes with a normality note appended.
