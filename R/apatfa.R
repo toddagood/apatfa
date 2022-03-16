@@ -29,7 +29,7 @@
 #' @importFrom gtools capwords
 #' @importFrom moments kurtosis skewness
 #' @importFrom officer docx_dim fp_text_lite styles_info
-#' @importFrom purrr flatten keep map map_chr map_depth
+#' @importFrom purrr flatten keep imap map map_chr map_depth
 #' @importFrom rlang .data
 #' @importFrom scales pvalue_format
 #' @importFrom stats AIC BIC formula hatvalues logLik nobs predict
