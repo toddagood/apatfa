@@ -189,8 +189,8 @@ add_styling <- function(styles, df) {
   df %>% keep(is.logical) %>% names() -> logical_cols
   df %>% keep(is.factor) %>% map(levels) %>%
     unlist(use.names = FALSE) %>% unique() -> factor_levs
-  ifelse(length(logical_cols) > 0,
-         c("TRUE", "FALSE"), c()) -> logical_levs
+  logical_levs <-
+    if(length(logical_cols) > 0) c("TRUE", "FALSE") else c()
   styles$italic.cols <- unique(c(styles$italic.cols, names(df)))
   styles$mono.cols <- unique(c(styles$mono.cols,
                                factor_cols, logical_cols))

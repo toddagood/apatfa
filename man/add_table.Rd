@@ -4,23 +4,25 @@
 \alias{add_table}
 \title{Adds a flextable}
 \usage{
-add_table(x, bookmark, title, styles, notes = NULL, wide = FALSE)
+add_table(x, bookmark, title, styles, notes = NULL, wide = FALSE, width = NULL)
 }
 \arguments{
-\item{x}{A flextable}
+\item{x}{A flextable.}
 
-\item{bookmark}{Bookmark for the table}
+\item{bookmark}{Bookmark for the table.}
 
-\item{title}{Title for the table}
+\item{title}{Title for the table.}
 
 \item{styles}{A styles list to use.}
 
-\item{notes}{Notes about the table}
+\item{notes}{Notes about the table.}
 
 \item{wide}{Should the table be displayed in landscape?}
+
+\item{width}{Width for the table in inches.}
 }
 \value{
-A flextable
+A flextable.
 }
 \description{
 Adds a flextable

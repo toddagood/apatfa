@@ -36,7 +36,7 @@
 #' @importFrom stats quantile rstandard sd setNames shapiro.test
 #' @importFrom tibble add_column as_tibble_row rowid_to_column
 #' @importFrom tidyr as_tibble everything tibble unnest
-#' @importFrom utils flush.console
+#' @importFrom utils flush.console help
 apatfa_help <- function() {
   help(package = "apatfa")
 }
