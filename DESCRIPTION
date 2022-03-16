@@ -24,6 +24,7 @@ RoxygenNote: 7.1.2
 Imports: 
     broom,
     dplyr,
+    exactci,
     extrafont,
     flextable,
     ftExtra,

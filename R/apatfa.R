@@ -11,6 +11,7 @@
 #' @importFrom broom tidy
 #' @importFrom dplyr across all_of group_by mutate pull rename_with
 #' @importFrom dplyr row_number select summarize
+#' @importFrom exactci poisson.exact
 #' @importFrom flextable add_footer_lines align as_chunk as_flextable
 #' @importFrom flextable as_i as_paragraph autofit border_remove
 #' @importFrom flextable colformat_double delete_part flextable font

@@ -843,6 +843,19 @@ out_of_date <- function(target, dependency) {
   return(FALSE)
 }
 
+#' Returns the estimated Poisson lambda parameter with CI.
+#'
+#' @param x A numeric vector of data.
+#' @param ... Other args for poisson.exact.
+#' @return A tibble with ymin, y, and ymax columns.
+#' @export
+poisson_lambda_ci <- function(x, ...) {
+  pt <- poisson.exact(x = sum(x), T = length(x), ...)
+  tibble(y = pt$estimate,
+         ymin = pt$conf.int[[1]],
+         ymax = pt$conf.int[[2]])
+}
+
 #' Converts p values to formatted paragraphs.
 #'
 #' @param pvals The p values.
