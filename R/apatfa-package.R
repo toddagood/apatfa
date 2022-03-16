@@ -23,7 +23,8 @@
 #' included into the end of the input file using a Word
 #' `IncludeText` field, the bookmarked content in the
 #' output docx file will be available for reference from within the
-#' input docx file in the usual way (by using the `Word > Insert > Cross Reference > Bookmark`
+#' input docx file in the usual way (by using the
+#' `Word > Insert > Cross Reference > Bookmark`
 #' menu).
 #'
 #' This package primarily uses the `officer` and `flextable` packages, but
@@ -55,22 +56,30 @@
 #'     'Begin on new page' option enabled.
 #'   * Ensure that a paragraph style named 'Caption' is defined based on
 #'     the 'Normal' style but bold, left-aligned, and with 0" indentation
-#'     for the first line.  Turn off any auto-numbering because `apatfa` will
+#'     for the first line.  Turn off any auto-numbering because `apatfa`
+#'     will
 #'     directly number the content in the right order using plain text.
-#'   * For convenience, define a font style named 'Code' in the 'Courier New"
+#'   * For convenience, define a font style named 'Code' in the
+#'     'Courier New"
 #'     10pt font and
 #'     use that to style factor levels and code fragments within the body
 #'     of the document because `apatfa` will do the same for factor levels
-#'     in the output tables and figures and for code listings in the appendices.
-#'   * Note that you don't need to worry about defining font settings for figure text
-#'     because all figures will be in the output docx file only and the figure text
+#'     in the output tables and figures and for code listings in the
+#'     appendices.
+#'   * Note that you don't need to worry about defining font settings for
+#'     figure text
+#'     because all figures will be in the output docx file only and the
+#'     figure text
 #'     will be styled (by default) using Arial 12pt by `apatfa`.
 #'
 #' * Use `Word > Insert > Quick Parts > Field`
-#'   to insert an `{IncludeText "output_file.docx"}` field right after the 'References'
-#'   section in your paper.  Note that `apatfa` does not attempt to automate generation of
+#'   to insert an `{IncludeText "output_file.docx"}` field right after
+#'   the 'References'
+#'   section in your paper.  Note that `apatfa` does not attempt to
+#'   automate generation of
 #'   the 'References' section because there are several good reference
-#'   management tools available that integrate directly into the `Word > References`
+#'   management tools available that integrate directly into the
+#'   `Word > References`
 #'   menu.
 #'
 #' * Install and load the `apatfa` package in R:
@@ -79,12 +88,16 @@
 #'   * `library(apatfa)`
 #'
 #' * Ensure that Arial, Courier New, and Times New Roman
-#'   fonts are installed on your computer (such as in the Windows font registry),
-#'   that the `extrafont` R package is installed, and that `extrafont::loadfonts()`
+#'   fonts are installed on your computer (such as in the Windows font
+#'   registry),
+#'   that the `extrafont` R package is installed, and that
+#'   `extrafont::loadfonts()`
 #'   can load those fonts.
-#'   Confirm that the fonts have been loaded by calling `extrafont::fonts()` in R.
+#'   Confirm that the fonts have been loaded by calling
+#'   `extrafont::fonts()` in R.
 #'
-#' * Create a simple 'R script' (not 'R Markdown' or 'R Notebook') containing
+#' * Create a simple 'R script' (not 'R Markdown' or 'R Notebook')
+#'   containing
 #'   the following calls:
 #'   * Call `get_styles() -> styles` to get a customizable styles list.
 #'   * Call `set_apa_defaults()` to set APA themes as the defaults for
@@ -97,19 +110,22 @@
 #'     directly manipulate the styles list to adjust styling as needed.
 #'   * Call `tibble(...) %>% flextable() %>% styler(styles)` to create
 #'     an APA styled flextable.  Numeric columns will be center-aligned
-#'     and decimal aligned by default.  The `styles` list will control other
+#'     and decimal aligned by default.  The `styles` list will control
+#'     other
 #'     styling options.  The styling can also be touched-up using
 #'     `flextable` functions if needed.
 #'   * Short-cuts are available to create specially formatted analysis
 #'     result tables.  For example: `aov(...) %>% as_flextable_aov()`.
-#'   * Call `add_table(x, bookmark, title, styles, notes = NULL, wide = FALSE, ...)`
+#'   * Call
+#'     `add_table(x, bookmark, title, styles, notes = NULL, wide = FALSE, ...)`
 #'     to add an APA styled flextable, `x`, as a bookmarked table with
 #'     the given `title`, `styles`, and `notes`. If the table is wide, use
 #'     `wide = TRUE` to display that table in landscape orientation.
 #'     There are functions available to assist with preparing the title
 #'     and notes args. The `bookmark` string must start with "t" (for
 #'     table) and be less than 40 characters long.
-#'   * Call `add_figure(fig, bookmark, title, styles, notes = NULL, wide = FALSE, ...)`
+#'   * Call
+#'     `add_figure(fig, bookmark, title, styles, notes = NULL, ...)`
 #'     to add a ggplot as a bookmarked figure with the given `title`,
 #'     `styles`, and `notes`.  If the figure is wide, use `wide = TRUE` to
 #'     display that figure in landscape orientation.  The

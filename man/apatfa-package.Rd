@@ -33,7 +33,8 @@ the content from within the input docx file.  After the output file is
 included into the end of the input file using a Word
 \code{IncludeText} field, the bookmarked content in the
 output docx file will be available for reference from within the
-input docx file in the usual way (by using the \verb{Word > Insert > Cross Reference > Bookmark}
+input docx file in the usual way (by using the
+\verb{Word > Insert > Cross Reference > Bookmark}
 menu).
 
 This package primarily uses the \code{officer} and \code{flextable} packages, but
@@ -66,22 +67,30 @@ the 'Normal' style but bold, center-aligned, and with the
 'Begin on new page' option enabled.
 \item Ensure that a paragraph style named 'Caption' is defined based on
 the 'Normal' style but bold, left-aligned, and with 0" indentation
-for the first line.  Turn off any auto-numbering because \code{apatfa} will
+for the first line.  Turn off any auto-numbering because \code{apatfa}
+will
 directly number the content in the right order using plain text.
-\item For convenience, define a font style named 'Code' in the 'Courier New"
+\item For convenience, define a font style named 'Code' in the
+'Courier New"
 10pt font and
 use that to style factor levels and code fragments within the body
 of the document because \code{apatfa} will do the same for factor levels
-in the output tables and figures and for code listings in the appendices.
-\item Note that you don't need to worry about defining font settings for figure text
-because all figures will be in the output docx file only and the figure text
+in the output tables and figures and for code listings in the
+appendices.
+\item Note that you don't need to worry about defining font settings for
+figure text
+because all figures will be in the output docx file only and the
+figure text
 will be styled (by default) using Arial 12pt by \code{apatfa}.
 }
 \item Use \verb{Word > Insert > Quick Parts > Field}
-to insert an \verb{\{IncludeText "output_file.docx"\}} field right after the 'References'
-section in your paper.  Note that \code{apatfa} does not attempt to automate generation of
+to insert an \verb{\{IncludeText "output_file.docx"\}} field right after
+the 'References'
+section in your paper.  Note that \code{apatfa} does not attempt to
+automate generation of
 the 'References' section because there are several good reference
-management tools available that integrate directly into the \code{Word > References}
+management tools available that integrate directly into the
+\code{Word > References}
 menu.
 \item Install and load the \code{apatfa} package in R:
 \itemize{
@@ -90,11 +99,15 @@ menu.
 \item \code{library(apatfa)}
 }
 \item Ensure that Arial, Courier New, and Times New Roman
-fonts are installed on your computer (such as in the Windows font registry),
-that the \code{extrafont} R package is installed, and that \code{extrafont::loadfonts()}
+fonts are installed on your computer (such as in the Windows font
+registry),
+that the \code{extrafont} R package is installed, and that
+\code{extrafont::loadfonts()}
 can load those fonts.
-Confirm that the fonts have been loaded by calling \code{extrafont::fonts()} in R.
-\item Create a simple 'R script' (not 'R Markdown' or 'R Notebook') containing
+Confirm that the fonts have been loaded by calling
+\code{extrafont::fonts()} in R.
+\item Create a simple 'R script' (not 'R Markdown' or 'R Notebook')
+containing
 the following calls:
 \itemize{
 \item Call \code{get_styles() -> styles} to get a customizable styles list.
@@ -108,19 +121,22 @@ the class of the column (factor, logical, numeric, string) or
 directly manipulate the styles list to adjust styling as needed.
 \item Call \code{tibble(...) \%>\% flextable() \%>\% styler(styles)} to create
 an APA styled flextable.  Numeric columns will be center-aligned
-and decimal aligned by default.  The \code{styles} list will control other
+and decimal aligned by default.  The \code{styles} list will control
+other
 styling options.  The styling can also be touched-up using
 \code{flextable} functions if needed.
 \item Short-cuts are available to create specially formatted analysis
 result tables.  For example: \code{aov(...) \%>\% as_flextable_aov()}.
-\item Call \code{add_table(x, bookmark, title, styles, notes = NULL, wide = FALSE, ...)}
+\item Call
+\code{add_table(x, bookmark, title, styles, notes = NULL, wide = FALSE, ...)}
 to add an APA styled flextable, \code{x}, as a bookmarked table with
 the given \code{title}, \code{styles}, and \code{notes}. If the table is wide, use
 \code{wide = TRUE} to display that table in landscape orientation.
 There are functions available to assist with preparing the title
 and notes args. The \code{bookmark} string must start with "t" (for
 table) and be less than 40 characters long.
-\item Call \code{add_figure(fig, bookmark, title, styles, notes = NULL, wide = FALSE, ...)}
+\item Call
+\code{add_figure(fig, bookmark, title, styles, notes = NULL, ...)}
 to add a ggplot as a bookmarked figure with the given \code{title},
 \code{styles}, and \code{notes}.  If the figure is wide, use \code{wide = TRUE} to
 display that figure in landscape orientation.  The

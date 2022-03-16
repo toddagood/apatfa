@@ -85,17 +85,4 @@ md_notes <- function(...) {
   md_pars(..., prop=normal_text)
 }
 
-if (FALSE) {
-  print(md_title("Plain *Italic* **bold**   plain__*Bold Italic*__ E=mc^^2^^ Water=H~2~O n=", 22))
-
-  print(md_title("
-This is the first paragraph.
-Still **para1**.
-
-Now in para2.
-Still ~para2~.
-Also in ^para2^.
-"))
-}
-
 
