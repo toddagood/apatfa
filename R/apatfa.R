@@ -8,6 +8,39 @@
 # and legend, but some things cannot be handled, such as italicizing
 # only a variable name within a longer axis title.
 
+#' @importFrom broom tidy
+#' @importFrom dplyr across all_of group_by mutate pull rename_with
+#' @importFrom dplyr row_number select summarize
+#' @importFrom flextable add_footer_lines align as_chunk as_flextable
+#' @importFrom flextable as_i as_paragraph autofit border_remove
+#' @importFrom flextable colformat_double delete_part flextable font
+#' @importFrom flextable fontsize italic mk_par ncol_keys nrow_part
+#' @importFrom flextable padding set_header_labels width
+#' @importFrom ftExtra as_paragraph_md
+#' @importFrom gdtools m_str_extents
+#' @importFrom ggplot2 aes annotation_custom coord_fixed element_blank
+#' @importFrom ggplot2 element_text geom_abline geom_boxplot geom_label
+#' @importFrom ggplot2 geom_point geom_smooth geom_text ggplot
+#' @importFrom ggplot2 layer_data scale_color_manual scale_fill_manual
+#' @importFrom ggplot2 scale_x_continuous scale_y_continuous theme
+#' @importFrom ggplot2 xlab ylab
+#' @importFrom graphics abline
+#' @importFrom grid rasterGrob
+#' @importFrom gtools capwords
+#' @importFrom moments kurtosis skewness
+#' @importFrom officer fp_text_lite
+#' @importFrom purrr flatten keep map map_chr map_depth
+#' @importFrom rlang .data
+#' @importFrom scales pvalue_format
+#' @importFrom stats AIC BIC formula hatvalues logLik nobs predict
+#' @importFrom stats quantile rstandard sd setNames shapiro.test
+#' @importFrom tibble add_column as_tibble_row rowid_to_column
+#' @importFrom tidyr as_tibble everything tibble unnest
+#' @importFrom utils flush.console
+apatfa_help <- function() {
+  help(package = "apatfa")
+}
+
 #' Initializes the list of tables, figures, and appendices
 #' @export
 init_tfas <- identity # Stubbed function
@@ -426,15 +459,13 @@ begin_figure <- function(bookmark,
                          width = NULL,
                          height = NULL,
                          reserve = 0) {
-  portrait_width <- 6.5
-  portrait_height <- 8.0
-  landscape_width <- 9.0
-  landscape_height <- 5.7
   if (is.null(width)) {
-    width <- if (wide) landscape_width else portrait_width
+    width <-
+      if (wide) styles$landscape.width else styles$portrait.width
   }
   if (is.null(height)) {
-    height <- if (wide) landscape_height else portrait_height
+    height <-
+      if (wide) styles$landscape.height else styles$portrait.height
   }
   height <- height - reserve
   extra_lines <- 0
@@ -630,20 +661,24 @@ autofit_width <- function(x, body_only = FALSE) {
 
 #' Adds a flextable
 #'
-#' @param x A flextable
-#' @param bookmark Bookmark for the table
-#' @param title Title for the table
+#' @param x A flextable.
+#' @param bookmark Bookmark for the table.
+#' @param title Title for the table.
 #' @param styles A styles list to use.
-#' @param notes Notes about the table
+#' @param notes Notes about the table.
 #' @param wide Should the table be displayed in landscape?
-#' @return A flextable
+#' @param width Width for the table in inches.
+#' @return A flextable.
 #' @export
 add_table <- function(x, bookmark, title, styles,
-                      notes = NULL, wide = FALSE) {
+                      notes = NULL, wide = FALSE, width = NULL) {
   if (!inherits(x, "flextable")) {
     stop("add_table supports only flextable objects.")
   }
-  width <- ifelse(wide, 9.0, 6.5)
+  if (is.null(width)) {
+    width <-
+      if (wide) styles$landscape.width else styles$portrait.width
+  }
   title <-
     if (inherits(title, "flextable")) {
       title

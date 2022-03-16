@@ -11,14 +11,11 @@ Description: Generates an output Word file (docx) containing bookmarked
     in APA style sections.  In each output section, the content is ordered
     by the first reference to the content within an input Word file.  The
     output file is designed to be included into the input file using
-    a Word field {INCLUDETEXT "output_file.docx"} so that bookmarks
-    in the output file can be referenced from the input file.  This package
-    primarily uses the officer and flextable packages, but the difference
-    here is the obsession with conforming to the APA style guide.  For example,
-    in APA style numeric table columns should be center-aligned and at the
-    same time should be decimal-aligned, which flextables do not support but
-    apatfa supports that and does it by default.  See help("apatfa-package")
-    for details on how to use apatfa to write a paper in APA style.
+    an "IncludeText" field in Word so that bookmarks
+    in the output file can be referenced from the input file.
+    This package primarily uses the officer and flextable packages, but
+    the difference here is the obsession with conforming to the APA
+    style guide.
 License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true

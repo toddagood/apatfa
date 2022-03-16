@@ -1,7 +1,4 @@
-#' @title apatfa: Generates APA Tables, Figures, and Appendix Sections
-#'
-#' @description
-#'
+#' @details
 #' The `apatfa` (a-pat-fa) package automates the creation of "Tables",
 #' "Figures", and "Appendix" sections for scholarly papers written in
 #' MS Word using the APA style guide.  The name `apatfa` is an abbreviation
@@ -39,8 +36,8 @@
 #' The `apatfa` package uses the `officer` package to read and write docx
 #' files, uses the `flextable` package to style tables, and uses the
 #' `ggplot2` package to style figures.  I really appreciate the work
-#' of David Gohel and the other contributors to the officer and
-#' flextable packages.
+#' of David Gohel and the other contributors to the `officer` and
+#' `flextable` packages.
 #'
 #' Here are the basic steps for using `apatfa` to create a paper:
 #'
@@ -102,7 +99,7 @@
 #'     an APA styled flextable.  Numeric columns will be center-aligned
 #'     and decimal aligned by default.  The `styles` list will control other
 #'     styling options.  The styling can also be touched-up using
-#'     flextable functions if needed.
+#'     `flextable` functions if needed.
 #'   * Short-cuts are available to create specially formatted analysis
 #'     result tables.  For example: `aov(...) %>% as_flextable_aov()`.
 #'   * Call `add_table(x, bookmark, title, styles, notes = NULL, wide = FALSE, ...)`
@@ -122,7 +119,7 @@
 #'     to add a bookmarked appendix.  The bookmark string must start
 #'     with "a" (for appendix) and be less than 40 characters long.
 #'     The `fun` function must accept an
-#'     rdocx object and use commands from the officer
+#'     rdocx object and use commands from the `officer`
 #'     package to add appendix content and return the updated rdocx object.
 #'     Within the `fun` function, you can use add_md_normal() to add 'Normal'
 #'     style paragraphs to the appendix with markdown styling support
@@ -155,38 +152,10 @@
 #' `browseVignettes(package = "apatfa")`.
 #'
 #' @seealso <https://github.com/toddagood/apatfa/>
+#' @seealso <https://github.com/davidgohel/flextable/>
+#' @seealso <https://github.com/davidgohel/officer/>
 #' @docType package
 #' @aliases apatfa-package
 #' @name apatfa-package
-NULL
-
-#' @importFrom broom tidy
-#' @importFrom dplyr across all_of group_by mutate pull rename_with
-#' @importFrom dplyr row_number select summarize
-#' @importFrom flextable add_footer_lines align as_chunk as_flextable
-#' @importFrom flextable as_i as_paragraph autofit border_remove
-#' @importFrom flextable colformat_double delete_part flextable font
-#' @importFrom flextable fontsize italic mk_par ncol_keys nrow_part
-#' @importFrom flextable padding set_header_labels width
-#' @importFrom ftExtra as_paragraph_md
-#' @importFrom gdtools m_str_extents
-#' @importFrom ggplot2 aes annotation_custom coord_fixed element_blank
-#' @importFrom ggplot2 element_text geom_abline geom_boxplot geom_label
-#' @importFrom ggplot2 geom_point geom_smooth geom_text ggplot
-#' @importFrom ggplot2 layer_data scale_color_manual scale_fill_manual
-#' @importFrom ggplot2 scale_x_continuous scale_y_continuous theme
-#' @importFrom ggplot2 xlab ylab
-#' @importFrom graphics abline
-#' @importFrom grid rasterGrob
-#' @importFrom gtools capwords
-#' @importFrom moments kurtosis skewness
-#' @importFrom officer fp_text_lite
-#' @importFrom purrr flatten keep map map_chr map_depth
-#' @importFrom rlang .data
-#' @importFrom scales pvalue_format
-#' @importFrom stats AIC BIC formula hatvalues logLik nobs predict
-#' @importFrom stats quantile rstandard sd setNames shapiro.test
-#' @importFrom tibble add_column as_tibble_row rowid_to_column
-#' @importFrom tidyr as_tibble everything tibble unnest
-#' @importFrom utils flush.console
-`apatfa-package` <- function() {}
+#' @keywords internal
+"_PACKAGE"

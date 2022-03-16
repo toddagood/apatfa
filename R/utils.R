@@ -185,11 +185,17 @@ add_glm_table <- function(x, ...) {
 #' @return Updated styles.
 #' @export
 add_styling <- function(styles, df) {
-  factor_cols <- df %>% keep( ~ is.factor(.)) %>% names()
-  logical_cols <- df %>% keep( ~ is.logical(.)) %>% names()
+  df %>% keep(is.factor) %>% names() -> factor_cols
+  df %>% keep(is.logical) %>% names() -> logical_cols
+  df %>% keep(is.factor) %>% map(levels) %>%
+    unlist(use.names = FALSE) %>% unique() -> factor_levs
+  ifelse(length(logical_cols) > 0,
+         c("TRUE", "FALSE"), c()) -> logical_levs
   styles$italic.cols <- unique(c(styles$italic.cols, names(df)))
   styles$mono.cols <- unique(c(styles$mono.cols,
                                factor_cols, logical_cols))
+  styles$mono.words <- unique(c(styles$mono.words,
+                                factor_levs, logical_levs))
   return(styles)
 }
 
@@ -522,26 +528,31 @@ dstats_row <- function(name, df) {
 #' @export
 get_styles <- function() {
   list(
-    device = "win",
     italic.cols = c("n", "N", "NAs",
                     "Min", "Q1", "Median", "Mean", "Q3", "Max",
                     "Range", "IQR", "SD", "Skewness", "Kurtosis",
-                    "p", "r", "t", "H", "W", "F", "df"),
+                    "p", "r", "t", "H", "W", "F", "df", "Df"),
+    italic = element_text(face = "italic"),
     mono.cols = c(),
+    mono.words = c("NA"),
+    mono = element_text(family = "Courier New", size = 10),
     mono.fontname = "Courier New",
     mono.fontsize = 10,
     mono.fontsize.geom_text = 10 * 0.3,
-    mono = element_text(family = "Courier New"),
     bold = element_text(face = "bold"),
     bold.italic = element_text(face = "bold.italic"),
-    italic = element_text(face = "italic"),
-    plain = element_text(family = "Arial", face = "plain"),
+    plain = element_text(family = "Arial", size = 12, face = "plain"),
     colors.yes_no_na = c(
       "Yes" = "#4DB6D0",
       "No" = "#D9717D",
       "NA" = "grey"
     ),
-    colors.true_false = c("TRUE" = "blue", "FALSE" = "red")
+    colors.true_false = c("TRUE" = "blue", "FALSE" = "red"),
+    portrait.width = 6.5,
+    portrait.height = 8.0,
+    landscape.width = 9.0,
+    landscape.height = 5.7,
+    device = "win"
   )
 }
 
