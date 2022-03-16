@@ -264,8 +264,9 @@ note_table <- function(notes, styles, as_title = FALSE) {
     lapply(function(z) {z[z != ""]}) -> notes_chunks
 
   map(notes_chunks, function(note_chunks) {
-    map(note_chunks, function(chunk) {
-      if(xor(chunk %in% styles$italic.cols, as_title)) {
+    imap(note_chunks, function(chunk, i) {
+      if(xor(chunk %in% styles$italic.cols, as_title) ||
+         i == 1 && !as_title && chunk == "Note") {
         flextable::as_chunk(chunk, props = iprops)
       } else {
         flextable::as_chunk(chunk, props = props)
