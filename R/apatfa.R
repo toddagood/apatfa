@@ -224,7 +224,8 @@ end_landscape <- function (x, type = "nextPage") {
 }
 
 table_adder <- function(x, obj, ...) {
-  flextable::body_add_flextable(x, obj$ft, align = "left", split = TRUE)
+  flextable::body_add_flextable(x, obj$ft, align = "left",
+                                split = TRUE, keepnext = FALSE)
 }
 
 figure_adder <- function(x, obj, i) {
