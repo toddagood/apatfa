@@ -4,7 +4,7 @@
 \alias{add_fit_cook_fig}
 \title{Adds a plot of Cook's distance by observation number.}
 \usage{
-add_fit_cook_fig(fit, bookmark, title)
+add_fit_cook_fig(fit, bookmark, title, styles, outliers = NULL)
 }
 \arguments{
 \item{fit}{A fit}
@@ -12,6 +12,10 @@ add_fit_cook_fig(fit, bookmark, title)
 \item{bookmark}{Bookmark for the figure}
 
 \item{title}{Title for the figure}
+
+\item{styles}{A styles list to use.}
+
+\item{outliers}{A vector of labels for outlier points.}
 }
 \description{
 Adds a plot of Cook's distance by observation number.

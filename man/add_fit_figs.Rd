@@ -4,12 +4,18 @@
 \alias{add_fit_figs}
 \title{Add plots for fits.}
 \usage{
-add_fit_figs(fit, num)
+add_fit_figs(fit, num, styles, outliers = NULL, type = NULL)
 }
 \arguments{
-\item{fit}{A fit}
+\item{fit}{A fit.}
 
-\item{num}{The fit number}
+\item{num}{The fit number.}
+
+\item{styles}{A styles list to use.}
+
+\item{outliers}{A vector of labels for outlier points.}
+
+\item{type}{Type of residuals to use.}
 }
 \description{
 Add plots for fits.

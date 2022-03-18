@@ -25,6 +25,7 @@
 #' @importFrom ggplot2 layer_data scale_color_manual scale_fill_manual
 #' @importFrom ggplot2 scale_x_continuous scale_y_continuous theme
 #' @importFrom ggplot2 xlab ylab
+#' @importFrom ggrepel geom_text_repel
 #' @importFrom graphics abline
 #' @importFrom grid rasterGrob
 #' @importFrom gtools capwords
@@ -33,7 +34,7 @@
 #' @importFrom purrr flatten keep imap map map_chr map_depth
 #' @importFrom rlang .data
 #' @importFrom scales pvalue_format
-#' @importFrom stats AIC BIC formula hatvalues logLik nobs predict
+#' @importFrom stats AIC BIC formula hatvalues logLik nobs predict resid
 #' @importFrom stats quantile rstandard sd setNames shapiro.test
 #' @importFrom tibble add_column as_tibble_row rowid_to_column
 #' @importFrom tidyr as_tibble everything tibble unnest

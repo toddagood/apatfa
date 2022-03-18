@@ -30,6 +30,7 @@ Imports:
     ftExtra,
     gdtools,
     ggplot2,
+    ggrepel,
     grDevices,
     gtools,
     magrittr,

@@ -21,13 +21,15 @@ add_anova_table <- function(x, ...) {
 #' Adds a plot of Cook's distance by observation number.
 #'
 #' @param fit A fit
+#' @param outliers A vector of labels for outlier points.
 #' @inheritParams begin_figure
 #'
 #' @export
-add_fit_cook_fig <- function(fit, bookmark, title) {
+add_fit_cook_fig <- function(fit, bookmark, title, styles,
+                             outliers = NULL) {
   notes <- "
 Note.  Labels indicated the ID of the example in the dataset."
-  apatfa::begin_figure(bookmark, title, notes = notes)
+  apatfa::begin_figure(bookmark, title, styles, notes = notes)
   plot(fit, which = 4)
   abline(h = c(0.5, 1.0), lty = 2, col = 2)
   apatfa::end_figure()
@@ -36,61 +38,81 @@ Note.  Labels indicated the ID of the example in the dataset."
 
 #' Add plots for fits.
 #'
-#' @param fit A fit
-#' @param num The fit number
+#' @param fit A fit.
+#' @param num The fit number.
+#' @param outliers A vector of labels for outlier points.
+#' @inheritParams add_figure
+#' @param type Type of residuals to use.
 #'
 #' @export
-add_fit_figs <- function(fit, num) {
+add_fit_figs <- function(fit, num, styles, outliers = NULL,
+                         type = NULL) {
   title <- "Plot of Observed by Fitted for Fit"
-  add_fit_obf_fig(fit, paste0("fOFFit", num), paste(title, num))
+  add_fit_obf_fig(fit, paste0("fOFFit", num), paste(title, num),
+                  styles, outliers = outliers)
 
   title <- "Plot of Residual by Predicted for Fit"
-  add_fit_rp_fig(fit, paste0("fRPFit", num), paste(title, num))
+  add_fit_rp_fig(fit, paste0("fRPFit", num), paste(title, num),
+                 styles, outliers = outliers, type = type)
 
   if (diff(range(hatvalues(fit))) > 1e-10) {
     title <- "Plot of Residual by Leverage for Fit"
-    add_fit_rl_fig(fit, paste0("fRLFit", num), paste(title, num))
+    add_fit_rl_fig(fit, paste0("fRLFit", num), paste(title, num),
+                   styles, outliers = outliers)
   } else {
     title <- "Plot of Cook's Distance by Observation for Fit"
-    add_fit_cook_fig(fit, paste0("fCookFit", num), paste(title, num))
+    add_fit_cook_fig(fit, paste0("fCookFit", num), paste(title, num),
+                     styles, outliers = outliers)
   }
   return()
 }
 
 #' Adds an observed versus fitted plot.
 #'
-#' @param fit A fit
+#' @param fit A fit.
+#' @param outliers A vector of labels for outlier points.
 #' @inheritParams add_figure
 #'
 #' @return A figure.
 #' @export
-add_fit_obf_fig <- function(fit, bookmark, title) {
-  notes <- "
-Note.  Labels indicated the ID of the example in the dataset."
+add_fit_obf_fig <- function(fit, bookmark, title, styles,
+                            outliers = NULL) {
+  notes <- if(!is.null(outliers)) {
+    note_that("Point labels indicated outlier IDs.") %>%
+      note_intro()
+  } else NULL
+  f <- predict(fit)
+  ob <- f + resid(fit)
+  opt_outliers <- function() {
+    if (is.null(outliers))
+      theme()
+    else
+      geom_text_repel(aes(label = outliers), na.rm = TRUE)
+  }
   fig <-
-    ggplot(mapping = aes(x = fit$fitted.values,
-                         y = fit$y,
-                         label = names(fit$y))) +
+    ggplot(mapping = aes(f, ob)) +
     geom_point() +
     geom_abline(aes(slope = 1, intercept = 0), linetype = 2) +
-    geom_text(check_overlap = TRUE, nudge_y = 0.25) +
-    scale_x_continuous(breaks = integers_in_range) +
-    scale_y_continuous(breaks = integers_in_range) +
     xlab("Fitted") +
-    ylab("Observed")
-  add_figure(fig, bookmark, title, notes = notes)
+    ylab("Observed") +
+    opt_outliers() -> fig
+  add_figure(fig, bookmark, title, styles, notes = notes)
 }
 
 #' Adds a plot of residual by leverage.
 #'
 #' @param fit A fit
-#' @inheritParams begin_figure
+#' @param outliers A vector of labels for outlier points.
+#' @inheritParams add_figure
 #'
 #' @export
-add_fit_rl_fig <- function(fit, bookmark, title) {
-  notes <- "
-Note.  Labels indicated the ID of the example in the dataset."
-  apatfa::begin_figure(bookmark, title, notes = notes)
+add_fit_rl_fig <- function(fit, bookmark, title, styles,
+                           outliers = NULL) {
+  notes <- if(!is.null(outliers)) {
+    note_that("Point labels indicated outlier IDs.") %>%
+      note_intro()
+  } else NULL
+  apatfa::begin_figure(bookmark, title, styles, notes = notes)
   plot(fit, which = 5)
   apatfa::end_figure()
   return()
@@ -99,24 +121,41 @@ Note.  Labels indicated the ID of the example in the dataset."
 #' Adds a plot of residual by predicted value.
 #'
 #' @param fit A fit
-#' @inheritParams begin_figure
+#' @param outliers A vector of labels for outlier points.
 #' @param type The type of residual to plot.
+#' @inheritParams add_figure
 #'
 #' @return A figure.
 #' @export
-add_fit_rp_fig <- function(fit, bookmark, title, type = "pearson") {
-  notes <- "
-Note.  Labels indicated the ID of the example in the dataset."
+add_fit_rp_fig <- function(fit, bookmark, title,
+                           styles, outliers = NULL,
+                           type = NULL) {
+  if(!is.null(outliers)) {
+    note_that("Point labels indicated outlier IDs.") %>%
+      note_intro() -> notes
+  } else NULL
   p <- predict(fit)
-  r <- rstandard(fit, type = type)
+  r <- if (is.null(type)) {
+    t <- "Standard"
+    rstandard(fit)
+  } else {
+    t <- type
+    rstandard(fit, type = type)
+  }
+  opt_outliers <- function() {
+    if (is.null(outliers))
+      theme()
+    else
+      geom_text_repel(aes(label = outliers), na.rm = TRUE)
+  }
   fig <-
-    ggplot(mapping = aes(x = p, y = r, label = names(r))) +
+    ggplot(mapping = aes(x = p, y = r)) +
     geom_point() +
     geom_smooth(formula = y ~ x, method = "glm", se = FALSE) +
-    geom_text(check_overlap = TRUE, nudge_y = 0.25) +
     xlab("Predicted") +
-    ylab(paste("Std.", capwords(type), "Residual"))
-  add_figure(fig, bookmark, title, notes = notes)
+    ylab(paste(t, "Residual")) +
+    opt_outliers()
+  add_figure(fig, bookmark, title, styles, notes = notes)
 }
 
 #' Adds an lm table.

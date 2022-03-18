@@ -4,14 +4,18 @@
 \alias{add_fit_obf_fig}
 \title{Adds an observed versus fitted plot.}
 \usage{
-add_fit_obf_fig(fit, bookmark, title)
+add_fit_obf_fig(fit, bookmark, title, styles, outliers = NULL)
 }
 \arguments{
-\item{fit}{A fit}
+\item{fit}{A fit.}
 
 \item{bookmark}{Bookmark for the figure}
 
 \item{title}{Title for the figure}
+
+\item{styles}{A styles list to use.}
+
+\item{outliers}{A vector of labels for outlier points.}
 }
 \value{
 A figure.

@@ -4,7 +4,7 @@
 \alias{add_fit_rp_fig}
 \title{Adds a plot of residual by predicted value.}
 \usage{
-add_fit_rp_fig(fit, bookmark, title, type = "pearson")
+add_fit_rp_fig(fit, bookmark, title, styles, outliers = NULL, type = NULL)
 }
 \arguments{
 \item{fit}{A fit}
@@ -12,6 +12,10 @@ add_fit_rp_fig(fit, bookmark, title, type = "pearson")
 \item{bookmark}{Bookmark for the figure}
 
 \item{title}{Title for the figure}
+
+\item{styles}{A styles list to use.}
+
+\item{outliers}{A vector of labels for outlier points.}
 
 \item{type}{The type of residual to plot.}
 }
