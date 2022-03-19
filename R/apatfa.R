@@ -528,33 +528,21 @@ begin_figure <- function(bookmark,
   }
   height <- height - reserve
   extra_lines <- 0
-  title <-
-    if (inherits(title, "flextable")) {
-      title
-    } else {
-      note_paras(title, styles, as_title = TRUE) %>% note_table()
-    }
+  title <- to_note_table(title, styles, as_title = TRUE, width)
   title %>% note_widths() -> nws
   tibble(w = nws) %>%
     mutate(nlines = as.integer(.data$w / width + 1)) %>%
     summarize(nlines = sum(nlines)) %>%
     pull(nlines) -> nlines
   extra_lines <- extra_lines + (nlines - 1)
-  title <- title %>% flextable::width(width = width)
   if (!is.null(notes)) {
-    notes <-
-      if (inherits(notes, "flextable")) {
-        notes
-      } else {
-        note_paras(notes, styles, as_title = FALSE) %>% note_table()
-      }
+    notes <- to_note_table(notes, styles, as_title = FALSE, width)
     notes %>% note_widths() -> nws
     tibble(w = nws) %>%
       mutate(nlines = as.integer(.data$w / width + 1)) %>%
       summarize(nlines = sum(nlines)) %>%
       pull(nlines) -> nlines
     extra_lines <- extra_lines + nlines
-    notes <- notes %>% flextable::width(width = width)
   }
   # Reduce the figure height to allow for extra title and notes lines.
   height <- height - styles$line.height * extra_lines
@@ -720,6 +708,25 @@ autofit_width <- function(x, body_only = FALSE) {
   flextable::width(x, width = df$w)
 }
 
+to_note_table <- function(notes, styles, as_title, width) {
+  if (inherits(notes, "flextable")) {
+    notes
+  } else {
+    if (!is.vector(notes)) {
+      list(notes) -> notes
+    }
+    map(notes, function (note) {
+      if (inherits(note, "paragraph")) {
+        note
+      } else {
+        note_paras(note, styles, as_title = as_title) %>% first()
+      }
+    }) %>%
+      note_table() %>%
+      flextable::width(width = width) -> title
+  }
+}
+
 #' Adds a flextable
 #'
 #' @param x A flextable.
@@ -746,23 +753,9 @@ add_table <- function(x, bookmark, title, styles,
     width <-
       if (wide) styles$landscape.width else styles$portrait.width
   }
-  title <-
-    if (inherits(title, "flextable")) {
-      title
-    } else {
-      note_paras(title, styles, as_title = TRUE) %>%
-        note_table() %>%
-        flextable::width(width = width) -> title
-    }
+  title <- to_note_table(title, styles, as_title = TRUE, width)
   if (!is.null(notes)) {
-    notes <-
-      if (inherits(notes, "flextable")) {
-        notes
-      } else {
-        note_paras(notes, styles, as_title = FALSE) %>%
-          note_table() %>%
-          flextable::width(width = width) -> notes
-      }
+    notes <- to_note_table(notes, styles, as_title = FALSE, width)
   }
   table_dir <- "./Tables"
   dir.create(table_dir, showWarnings = FALSE)

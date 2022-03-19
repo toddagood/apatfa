@@ -4,7 +4,16 @@
 \alias{add_lm_table}
 \title{Adds an lm table.}
 \usage{
-add_lm_table(x, bookmark, title, styles, notes = NULL, ...)
+add_lm_table(
+  x,
+  bookmark,
+  title,
+  styles,
+  notes = NULL,
+  wide = FALSE,
+  width = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{An lm fit.}
@@ -16,6 +25,10 @@ add_lm_table(x, bookmark, title, styles, notes = NULL, ...)
 \item{styles}{A styles list to use.}
 
 \item{notes}{Notes about the table.}
+
+\item{wide}{Should the table be displayed in landscape?}
+
+\item{width}{Width for the table in inches.}
 
 \item{...}{Additional args for add_table().}
 }

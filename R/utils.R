@@ -231,7 +231,8 @@ as_t <- function(x, props = NULL) {
 #' @return A flextable.
 #' @export
 add_lm_table <- function(x, bookmark, title, styles,
-                         notes = NULL, ...) {
+                         notes = NULL, wide = FALSE, width = NULL,
+                         ...) {
   ft <- as_flextable_lm(x)
 
   g <- broom::glance(x)
@@ -294,6 +295,11 @@ add_lm_table <- function(x, bookmark, title, styles,
     summary_para3,
     summary_para4) -> c2_paras
 
+  if (is.null(width)) {
+    width <-
+      if (wide) styles$landscape.width else styles$portrait.width
+  }
+
   defaults <- flextable::get_flextable_defaults()
   big_border <- officer::fp_border(width = 2,
                                    color = defaults$border.color)
@@ -305,38 +311,28 @@ add_lm_table <- function(x, bookmark, title, styles,
     mk_par(value = .data$., use_dot = TRUE) %>%
     valign(valign = "top") %>%
     width(j = 1, width = lw) %>%
-    width(j = 2, width = 6.5 - lw) %>%
+    width(j = 2, width = width - lw) %>%
     mk_par(j = 1, value = header_para, part = "header") %>%
     merge_at(j = 1:2, part = "header") %>%
     align(align = "left", part = "all") %>%
     flextable::hline_bottom(border = big_border, part = "header") %>%
     flextable::hline(i = 1, border = big_border, part = "body") -> title
 
-  list(as_t("***") %>% as_sup(),
-       as_t("p") %>% as_i(),
-       as_t("<.001.  "),
-       as_t("**") %>% as_sup(),
-       as_t("p") %>% as_i(),
-       as_t("<.01.  "),
-       as_t("*") %>% as_sup(),
-       as_t("p") %>% as_i(),
-       as_t("<.05.  "),
-       as_t("†") %>% as_sup(),
-       as_t("p") %>% as_i(),
-       as_t("<.10.")) -> note
-  as_paragraph(list_values = note) -> stat_para
+  note_p_levels() -> stat_para
 
   notes %>%
     note_paras(styles = styles) -> paras
   paras[[length(paras) + 1]] <- stat_para
-  note_table(paras) -> notes
+  note_table(paras) %>%
+    width(width = width) -> notes
 
   styler(ft, styles) %>%
     merge_at(i = 1, j = 5:6, part = "header") %>%
     align(j = "p.value", align = "right") %>%
     padding(j = "p.value", padding.right = 0) %>%
     padding(j = "signif", padding.left = 0) %>%
-    add_table(bookmark, title, styles, notes = notes, ...)
+    add_table(bookmark, title, styles, notes = notes,
+              wide = wide, width = width, ...)
 }
 
 #' Adds a glm table.
@@ -406,8 +402,6 @@ add_styling <- function(styles, df) {
 #' @export
 as_flextable_aov <- function(x) {
   styler <- function(x) {
-    # Get number of cols.
-    ncol <- ncol_keys(x)
     # Get number of body rows.
     b_nrow <- nrow_part(x, "body")
     # Round doubles to three digits.
@@ -415,23 +409,28 @@ as_flextable_aov <- function(x) {
     # Improve header labels.
     x <- set_header_labels(x,
                            term = "Term",
-                           `df` = "Df",
-                           sumsq = "Sum Sq",
-                           meansq = "Mean Sq",
+                           sumsq = "SS",
                            statistic = "F",
                            p.value = "Pr(>F)")
     x <- set_formatter(x, p.value = function(x) {
-      sub("e-(..)$", "e-0\\1", sprintf("%.2e", x))
+      ifelse(is.na(x),
+             "",
+             sub("e-(..)$", "e-0\\1", sprintf("%.2e", x)))
     })
     x <- mk_par(x, j = "signif",
-                 value = as_paragraph(signif_format(p.value)) )
+                value = as_paragraph(signif_format(p.value)) )
+    x <- merge_at(x, j = 5:6, part = "header")
+    x <- align(x, j = "p.value", align = "right")
     x <- align(x, j = "signif", align = "left")
+    x <- padding(x, j = "p.value", padding.right = 0)
+    x <- padding(x, j = "signif", padding.left = 0)
     # Italicize statistics in the header.
-    x <- italic(x, j = seq.int(2, ncol), part = "header")
+    x <- italic(x, j = seq.int(2, 5), part = "header")
     # Italicize variables in the first body column.
-    if (b_nrow > 1) {
-      x <- italic(x, i = seq.int(1, b_nrow - 1), j = 1, part = "body")
+    if (b_nrow > 2) {
+      x <- italic(x, i = seq.int(2, b_nrow - 1), j = 1, part = "body")
     }
+
     # Fit to width.
     return(autofit_width(x))
   }
@@ -615,7 +614,7 @@ as_flextable.raov <- function(x, effect_size) {
     # Round doubles to three digits.
     x <- colformat_double(x, digits = 3, na_str = "")
     # Improve header labels.
-    x <- set_header_labels(x, `DF` = "Df", `p-value` = "Sig.",
+    x <- set_header_labels(x, `DF` = "df", `p-value` = "Sig.",
                            effect_size = "Effect Size")
     # Italicize statistics in the header.
     x <- italic(x, j = 2:7, part = "header")
@@ -777,7 +776,7 @@ get_styles <- function() {
     italic.cols = c("n", "N", "NAs",
                     "Min", "Q1", "Median", "Mean", "Q3", "Max",
                     "Range", "IQR", "SD", "Skewness", "Kurtosis",
-                    "p", "r", "t", "H", "W", "F", "df", "Df"),
+                    "p", "r", "t", "H", "W", "F", "df"),
     italic = element_text(face = "italic"),
     mono.cols = c(),
     mono.words = c("NA"),
@@ -1022,6 +1021,25 @@ note_normal <- function(notes = NULL, what = "Coloring",
   note_that(notes, note)
 }
 
+#' Returns a paragraph of significance levels for p.
+#'
+#' @return A paragraph.
+#' @export
+note_p_levels <- function() {
+  list(as_t("***") %>% as_sup(),
+       as_t("p") %>% as_i(),
+       as_t("<.001.  "),
+       as_t("**") %>% as_sup(),
+       as_t("p") %>% as_i(),
+       as_t("<.01.  "),
+       as_t("*") %>% as_sup(),
+       as_t("p") %>% as_i(),
+       as_t("<.05.  "),
+       as_t("†") %>% as_sup(),
+       as_t("p") %>% as_i(),
+       as_t("<.10.")) -> note
+  as_paragraph(list_values = note)
+}
 
 #' Appends a note about a p value.
 #'
