@@ -750,17 +750,19 @@ add_table <- function(x, bookmark, title, styles,
     if (inherits(title, "flextable")) {
       title
     } else {
-      note_paras(title, styles, as_title = TRUE) %>% note_table()
+      note_paras(title, styles, as_title = TRUE) %>%
+        note_table() %>%
+        flextable::width(width = width) -> title
     }
-  title %>% flextable::width(width = width) -> title
   if (!is.null(notes)) {
     notes <-
       if (inherits(notes, "flextable")) {
         notes
       } else {
-        note_paras(notes, styles, as_title = FALSE) %>% note_table()
+        note_paras(notes, styles, as_title = FALSE) %>%
+          note_table() %>%
+          flextable::width(width = width) -> notes
       }
-    notes %>% flextable::width(width = width) -> notes
   }
   table_dir <- "./Tables"
   dir.create(table_dir, showWarnings = FALSE)

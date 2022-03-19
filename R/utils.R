@@ -234,34 +234,83 @@ add_lm_table <- function(x, bookmark, title, styles,
                          notes = NULL, ...) {
   ft <- as_flextable_lm(x)
 
-  note_fit_model(fit = x) %>%
-    note_paras(styles = styles) -> model_para
-
   g <- broom::glance(x)
 
-  paste0("Test Statistic: **F**(",
+  list(title) %>%
+    note_paras(styles = styles, as_title = TRUE) %>%
+    first() -> header_para
+
+  list("Model:", "Summary:", " ", " ", " ") %>%
+    note_paras(styles = styles) -> c1_paras
+
+  note_fit_model(fit = x) %>%
+    note_paras(styles = styles) %>%
+    first() -> model_para
+
+  paste0("Test statistic: *F*(",
          format(g$df, big.mark = ","),
          ", ",
          format(g$df.residual, big.mark = ","),
          ")=",
          formatC(g$statistic, format = "f", digits = 2),
-         ", **p**",
-         note_p_value(p = g$p.value, with_p = FALSE, with_eq = TRUE)
-         ) %>%
+         ", *p*",
+         note_p_value(p = g$p.value, with_p = FALSE,
+                      with_eq = TRUE)) %>%
     as_paragraph_md() -> summary_para1
 
-  list(as_t("Multiple "),
-       as_t("R") %>% as_i(),
-       as_t("2") %>% as_sup(),
-       as_t("="),
-       as_t(format(g$r.squared, format = "f", digits = 2)),
-       as_t(".  Adjusted "),
-       as_t("R") %>% as_i(),
-       as_t("2") %>% as_sup(),
-       as_t("="),
-       as_t(format(g$adj.r.squared, format = "f", digits = 2)),
-       as_t(".")) -> note
-  as_paragraph(list_values = note) -> summary_para2
+  paste0("Multiple *R*^2^=",
+         format(g$r.squared, format = "f", digits = 2),
+         ".  Adjusted *R*^2^=",
+         format(g$adj.r.squared, format = "f", digits = 2),
+         ".  *AIC*=",
+         formatC(g$AIC, format = "f", digits = 2),
+         ".  *BIC*=",
+         formatC(g$BIC, format = "f", digits = 2),
+         ".") %>%
+    as_paragraph_md() -> summary_para2
+
+  paste0("Residual standard error: ",
+         formatC(g$sigma, format = "f", digits = 2),
+         " on ",
+         format(g$df.residual, big.mark = ","),
+         " degrees of freedom.") %>%
+    as_paragraph_md() -> summary_para3
+
+  quants <- quantile(x$residuals)
+  names(quants) <- c("Min", "Q1", "Median", "Q3", "Max")
+  paste0("Residuals: ",
+         paste0("*", names(quants),
+                "*=",
+                formatC(quants, format = "f", digits = 2),
+                collapse = ", "),
+         ".") %>%
+    as_paragraph_md() -> summary_para4
+
+  do.call(c, c1_paras) -> c1_paras
+
+  c(model_para,
+    summary_para1,
+    summary_para2,
+    summary_para3,
+    summary_para4) -> c2_paras
+
+  defaults <- flextable::get_flextable_defaults()
+  big_border <- officer::fp_border(width = 2,
+                                   color = defaults$border.color)
+  lw <- 0.9
+  tibble(c1 = c1_paras, c2 = c2_paras) %>%
+    flextable() %>%
+    border_remove() %>%
+    padding(padding.left = 0, part = "header") %>%
+    mk_par(value = .data$., use_dot = TRUE) %>%
+    valign(valign = "top") %>%
+    width(j = 1, width = lw) %>%
+    width(j = 2, width = 6.5 - lw) %>%
+    mk_par(j = 1, value = header_para, part = "header") %>%
+    merge_at(j = 1:2, part = "header") %>%
+    align(align = "left", part = "all") %>%
+    flextable::hline_bottom(border = big_border, part = "header") %>%
+    flextable::hline(i = 1, border = big_border, part = "body") -> title
 
   list(as_t("***") %>% as_sup(),
        as_t("p") %>% as_i(),
@@ -931,7 +980,7 @@ note_estimate_htest <- function(notes = NULL, h) {
 #' @export
 note_fit_model <- function(notes = NULL, fit) {
   fit$terms %>%
-    deparse(width.cutoff = 120L) %>%
+    deparse(width.cutoff = 100L) %>%
     as_tibble_col() %>%
     mutate(i = row_number()) %>%
     subset(i == min(i) | i == max(i)) %>%
