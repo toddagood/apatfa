@@ -4,7 +4,7 @@
 \alias{note_cor_test}
 \title{Performs a correlation test and appends a note about it.}
 \usage{
-note_cor_test(notes, df, x, y, alpha = 0.05, ...)
+note_cor_test(notes = NULL, df, x, y, alpha = 0.05, ...)
 }
 \arguments{
 \item{notes}{The notes.}

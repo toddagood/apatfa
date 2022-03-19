@@ -4,12 +4,16 @@
 \alias{note_p_value}
 \title{Appends a note about a p value.}
 \usage{
-note_p_value(notes, p)
+note_p_value(notes = NULL, p, with_p = TRUE, with_eq = with_p)
 }
 \arguments{
 \item{notes}{The notes.}
 
 \item{p}{The p value.}
+
+\item{with_p}{Logical.  Prefix with the p character?}
+
+\item{with_eq}{Logical.  Use equal sign?}
 }
 \value{
 The notes, with a note about a p value appended.

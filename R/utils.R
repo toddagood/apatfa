@@ -27,10 +27,13 @@ add_anova_table <- function(x, ...) {
 #' @export
 add_fit_cook_fig <- function(fit, bookmark, title, styles,
                              outliers = NULL) {
-  notes <- "
-Note.  Labels indicated the ID of the example in the dataset."
-  apatfa::begin_figure(bookmark, title, styles, notes = notes)
-  plot(fit, which = 4)
+  notes <- if(!is.null(outliers)) {
+    note_that("Outliers were labeled by observation ID.")
+  } else NULL
+  notes %>% note_fit_model(fit) -> notes
+  apatfa::begin_figure(bookmark, title, styles,
+                       notes = note_intro(notes))
+  plot(fit, which = 4, sub.caption = "")
   abline(h = c(0.5, 1.0), lty = 2, col = 2)
   apatfa::end_figure()
   return()
@@ -47,13 +50,17 @@ Note.  Labels indicated the ID of the example in the dataset."
 #' @export
 add_fit_figs <- function(fit, num, styles, outliers = NULL,
                          type = NULL) {
-  title <- "Plot of Observed by Fitted for Fit"
-  add_fit_obf_fig(fit, paste0("fOFFit", num), paste(title, num),
-                  styles, outliers = outliers)
+  title <- "Plot of Observed by Predicted for Fit"
+  add_fit_op_fig(fit, paste0("fOPFit", num), paste(title, num),
+                 styles, outliers = outliers)
 
   title <- "Plot of Residual by Predicted for Fit"
   add_fit_rp_fig(fit, paste0("fRPFit", num), paste(title, num),
                  styles, outliers = outliers, type = type)
+
+  title <- "Normal Q-Q Plot of Residuals for Fit"
+  add_fit_qq_fig(fit, paste0("fQQFit", num), paste(title, num),
+                 styles)
 
   if (diff(range(hatvalues(fit))) > 1e-10) {
     title <- "Plot of Residual by Leverage for Fit"
@@ -67,7 +74,7 @@ add_fit_figs <- function(fit, num, styles, outliers = NULL,
   return()
 }
 
-#' Adds an observed versus fitted plot.
+#' Adds an observed versus predicted plot.
 #'
 #' @param fit A fit.
 #' @param outliers A vector of labels for outlier points.
@@ -75,12 +82,12 @@ add_fit_figs <- function(fit, num, styles, outliers = NULL,
 #'
 #' @return A figure.
 #' @export
-add_fit_obf_fig <- function(fit, bookmark, title, styles,
+add_fit_op_fig <- function(fit, bookmark, title, styles,
                             outliers = NULL) {
   notes <- if(!is.null(outliers)) {
-    note_that("Point labels indicated outlier IDs.") %>%
-      note_intro()
+    note_that("Outliers were labeled by observation ID.")
   } else NULL
+  notes %>% note_fit_model(fit) -> notes
   f <- predict(fit)
   ob <- f + resid(fit)
   opt_outliers <- function() {
@@ -92,11 +99,50 @@ add_fit_obf_fig <- function(fit, bookmark, title, styles,
   fig <-
     ggplot(mapping = aes(f, ob)) +
     geom_point() +
-    geom_abline(aes(slope = 1, intercept = 0), linetype = 2) +
-    xlab("Fitted") +
+    geom_abline(aes(slope = 1, intercept = 0)) +
+    xlab("Predicted") +
     ylab("Observed") +
     opt_outliers() -> fig
-  add_figure(fig, bookmark, title, styles, notes = notes)
+  add_figure(fig, bookmark, title, styles,
+             notes = note_intro(notes))
+}
+
+#' Adds a normal Q-Q plot of residuals.
+#'
+#' Outliers among residuals are labeled.
+#'
+#' @param fit A fit.
+#' @inheritParams add_figure
+#'
+#' @return A figure.
+#' @export
+add_fit_qq_fig <- function(fit, bookmark, title, styles) {
+  if (!inherits(fit, "lm")) {
+    stop("Only fits of class lm are supported.")
+  }
+  tibble(sres = rstandard(fit)) %>%
+    mutate(label = row_number()) -> data
+  ggplot(data, aes(sample = .data$sres)) +
+    stat_qq() +
+    stat_qq_line() +
+    labs(y = "Standard Residual",
+         x = "Theoretical Quantile") -> fig
+  data %>%
+    arrange(.data$sres) %>%
+    mutate(outlier = is_outlier(.data$sres),
+           rank = rank(-abs(.data$sres))) %>%
+    mutate(label = ifelse(.data$outlier & .data$rank <= 3,
+                          .data$label, NA)) -> data
+  notes <- if(!is.null(data$label)) {
+    note_that("Outlier residuals were labeled by observation ID.")
+  } else NULL
+  notes %>% note_fit_model(fit) -> notes
+  fig +
+    geom_text_repel(inherit.aes = FALSE,
+                    data = layer_data(fig), aes(.data$x, .data$y),
+                    label = data$label, na.rm = TRUE) -> fig
+  add_figure(fig, bookmark, title, styles,
+             notes = note_intro(notes))
 }
 
 #' Adds a plot of residual by leverage.
@@ -109,11 +155,12 @@ add_fit_obf_fig <- function(fit, bookmark, title, styles,
 add_fit_rl_fig <- function(fit, bookmark, title, styles,
                            outliers = NULL) {
   notes <- if(!is.null(outliers)) {
-    note_that("Point labels indicated outlier IDs.") %>%
-      note_intro()
+    note_that("Outlier residuals were labeled by observation ID.")
   } else NULL
-  apatfa::begin_figure(bookmark, title, styles, notes = notes)
-  plot(fit, which = 5)
+  notes %>% note_fit_model(fit) -> notes
+  apatfa::begin_figure(bookmark, title, styles,
+                       notes = note_intro(notes))
+  plot(fit, which = 5, sub.caption = "")
   apatfa::end_figure()
   return()
 }
@@ -130,10 +177,10 @@ add_fit_rl_fig <- function(fit, bookmark, title, styles,
 add_fit_rp_fig <- function(fit, bookmark, title,
                            styles, outliers = NULL,
                            type = NULL) {
-  if(!is.null(outliers)) {
-    note_that("Point labels indicated outlier IDs.") %>%
-      note_intro() -> notes
+  notes <- if(!is.null(outliers)) {
+    note_that("Outliers were labeled by observation ID.")
   } else NULL
+  notes %>% note_fit_model(fit) -> notes
   p <- predict(fit)
   r <- if (is.null(type)) {
     t <- "Standard"
@@ -155,28 +202,92 @@ add_fit_rp_fig <- function(fit, bookmark, title,
     xlab("Predicted") +
     ylab(paste(t, "Residual")) +
     opt_outliers()
-  add_figure(fig, bookmark, title, styles, notes = notes)
+  add_figure(fig, bookmark, title, styles,
+             notes = note_intro(notes))
+}
+
+#' Converts a string to a chunk of text in the default table font.
+#'
+#' @param x A string.
+#' @param props The fp_text properties to use (NULL for default).
+#'
+#' @return A chunk of text.
+#' @export
+as_t <- function(x, props = NULL) {
+  if (is.null(props)) {
+    defaults <- flextable::get_flextable_defaults()
+    props <- officer::fp_text_lite(font.family = defaults$font.family,
+                                   font.size = defaults$font.size)
+  }
+  as_chunk(x, prop = props)
 }
 
 #' Adds an lm table.
 #'
 #' @param x An lm fit.
-#' @param ... Args for add_table().
+#' @param ... Additional args for add_table().
+#' @inheritParams add_table
 #'
 #' @return A flextable.
 #' @export
-add_lm_table <- function(x, ...) {
-  x <- as_flextable(x)
-  ncol <- ncol_keys(x)
-  b_nrow <- nrow_part(x, "body")
-  x <- set_header_labels(x,
-                         term = "Term",
-                         std.error = "SE",
-                         statistic = "t")
-  x <- italic(x, j = 2:ncol, part = "header")
-  if (b_nrow > 1) x <- italic(x, i = 2:b_nrow, j = 1, part = "body")
-  x <- autofit_width(x)
-  add_table(x, ...)
+add_lm_table <- function(x, bookmark, title, styles,
+                         notes = NULL, ...) {
+  ft <- as_flextable_lm(x)
+
+  note_fit_model(fit = x) %>%
+    note_paras(styles = styles) -> model_para
+
+  g <- broom::glance(x)
+
+  paste0("Test Statistic: **F**(",
+         format(g$df, big.mark = ","),
+         ", ",
+         format(g$df.residual, big.mark = ","),
+         ")=",
+         formatC(g$statistic, format = "f", digits = 2),
+         ", **p**",
+         note_p_value(p = g$p.value, with_p = FALSE, with_eq = TRUE)
+         ) %>%
+    as_paragraph_md() -> summary_para1
+
+  list(as_t("Multiple "),
+       as_t("R") %>% as_i(),
+       as_t("2") %>% as_sup(),
+       as_t("="),
+       as_t(format(g$r.squared, format = "f", digits = 2)),
+       as_t(".  Adjusted "),
+       as_t("R") %>% as_i(),
+       as_t("2") %>% as_sup(),
+       as_t("="),
+       as_t(format(g$adj.r.squared, format = "f", digits = 2)),
+       as_t(".")) -> note
+  as_paragraph(list_values = note) -> summary_para2
+
+  list(as_t("***") %>% as_sup(),
+       as_t("p") %>% as_i(),
+       as_t("<.001.  "),
+       as_t("**") %>% as_sup(),
+       as_t("p") %>% as_i(),
+       as_t("<.01.  "),
+       as_t("*") %>% as_sup(),
+       as_t("p") %>% as_i(),
+       as_t("<.05.  "),
+       as_t("†") %>% as_sup(),
+       as_t("p") %>% as_i(),
+       as_t("<.10.")) -> note
+  as_paragraph(list_values = note) -> stat_para
+
+  notes %>%
+    note_paras(styles = styles) -> paras
+  paras[[length(paras) + 1]] <- stat_para
+  note_table(paras) -> notes
+
+  styler(ft, styles) %>%
+    merge_at(i = 1, j = 5:6, part = "header") %>%
+    align(j = "p.value", align = "right") %>%
+    padding(j = "p.value", padding.right = 0) %>%
+    padding(j = "signif", padding.left = 0) %>%
+    add_table(bookmark, title, styles, notes = notes, ...)
 }
 
 #' Adds a glm table.
@@ -259,22 +370,25 @@ as_flextable_aov <- function(x) {
                            sumsq = "Sum Sq",
                            meansq = "Mean Sq",
                            statistic = "F",
-                           p.value = "Sig.")
+                           p.value = "Pr(>F)")
+    x <- set_formatter(x, p.value = function(x) {
+      sub("e-(..)$", "e-0\\1", sprintf("%.2e", x))
+    })
+    x <- mk_par(x, j = "signif",
+                 value = as_paragraph(signif_format(p.value)) )
+    x <- align(x, j = "signif", align = "left")
     # Italicize statistics in the header.
     x <- italic(x, j = seq.int(2, ncol), part = "header")
     # Italicize variables in the first body column.
     if (b_nrow > 1) {
       x <- italic(x, i = seq.int(1, b_nrow - 1), j = 1, part = "body")
     }
-    # Use special formatting for p values.
-    x <- mk_par(x, j = "p.value", part = "body", use_dot = TRUE,
-                value = pval_pars(.data$.))
     # Fit to width.
     return(autofit_width(x))
   }
   tidy(x) %>%
-    mutate(across("df", as.integer)) %>%
-    flextable() %>%
+    mutate(across("df", as.integer)) -> tab
+  flextable(tab, col_keys = c(names(tab), "signif")) %>%
     styler()
 }
 
@@ -356,6 +470,50 @@ as_flextable.kruskal_effsize <- function(x) {
   flextable(x) %>%
     styler()
 }
+
+signif_format <- function(x){
+  z <- cut(x, breaks = c(-Inf, 0.001, 0.01, 0.05, 0.1, Inf),
+           labels = c("***", "**", "*", "†", ""))
+  z <- as.character(z)
+  z[is.na(x)] <- ""
+  z
+}
+
+#' Converts an lm to a flextable.
+#'
+#' @param x An lm object.
+#'
+#' @return A flextable.
+#' @export
+as_flextable_lm <- function(x){
+
+  if( !requireNamespace("broom", quietly = TRUE) ){
+    stop(paste("broom package should be installed to create",
+               "a flextable from an lm object."))
+  }
+
+  data_t <- broom::tidy(x)
+
+  ft <- flextable(data_t,
+                  col_keys = c("term", "estimate", "std.error",
+                               "statistic", "p.value", "signif"))
+  ft <- colformat_double(ft)
+  ft <- set_formatter(ft, p.value = function(x) {
+    sub("e-(..)$", "e-0\\1", sprintf("%.2e", x))
+    })
+  ft <- mk_par(ft, j = "signif",
+               value = as_paragraph(as_sup(as_t(signif_format(p.value)))))
+  ft <- align(ft, j = "signif", align = "left")
+  ft <- set_header_labels(ft, term = "Term", estimate = "Estimate",
+                          std.error = "SE", statistic = "t",
+                          p.value = "Pr(>|t|)", signif = "" )
+  ncol <- ncol_keys(ft)
+  b_nrow <- nrow_part(ft, "body")
+  ft <- italic(ft, j = 2:ncol, part = "header")
+  if (b_nrow > 1) ft <- italic(ft, i = 2:b_nrow, j = 1, part = "body")
+  ft
+}
+
 
 #' Converts a power.htest to a flextable.
 #'
@@ -725,6 +883,133 @@ is_outlier <- function(x, ...) {
   x < d$xmin | x > d$xmax
 }
 
+#' Performs a correlation test and appends a note about it.
+#'
+#' @param notes The notes.
+#' @param df A data frame.
+#' @param x The column name for the x variable.
+#' @param y The column name for the y variable.
+#' @param alpha The alpha level for the correlation test.
+#' @param ... Additional args for stats::cor.test().
+#'
+#' @return The notes, with a correlation test note appended.
+#' @export
+note_cor_test <- function(notes = NULL, df, x, y, alpha = 0.05, ...) {
+  stats::cor.test(df[[x]], df[[y]], ...) -> h
+  w <- ifelse(h$p.value < alpha, "correlated", "not correlated")
+  paste0(x, " and ", y, " were ", w) %>%
+    note_estimate_htest(h) %>%
+    note_statistic_htest(h) %>%
+    note_p_value(h$p.value) %>%
+    paste0(".") -> note
+  note_that(notes, note)
+}
+
+#' Appends a note about an estimate from a hypothesis test.
+#'
+#' @param notes The notes.
+#' @param h A hypothesis test.
+#'
+#' @return The notes, with a note about an estimate appended.
+#' @export
+note_estimate_htest <- function(notes = NULL, h) {
+  name <- gsub("cor", "r", h$estimate %>% attr("name"))
+  format(h$estimate, digits = 2) -> val
+  paste0(name, "(", h$parameter, ")=",
+         ifelse(name == "r",
+                gsub("^-0\\.", "-.", gsub("^0\\.", ".", val)),
+                val)) -> note
+  note_that(notes, note)
+}
+
+#' Appends a note about that.
+#'
+#' @param notes The notes.
+#' @param fit The model of this fit will be noted.
+#'
+#' @return The updated notes.
+#' @export
+note_fit_model <- function(notes = NULL, fit) {
+  fit$terms %>%
+    deparse(width.cutoff = 120L) %>%
+    as_tibble_col() %>%
+    mutate(i = row_number()) %>%
+    subset(i == min(i) | i == max(i)) %>%
+    pull(value) %>%
+    paste(collapse = "... + ") -> note
+  gsub(" +", " ", note) -> note
+  paste("The model was", note) -> fit_model
+  note_that(notes, fit_model)
+}
+
+#' Prefixes notes with an intro: Note.
+#'
+#' @param notes The notes.
+#'
+#' @return The notes, prefixed if the intro was missing.
+#' @export
+note_intro <- function(notes) {
+  ifelse(!is.null(notes) && startsWith(notes, "Note."),
+         notes,
+         paste0("Note.  ", notes))
+}
+
+#' Appends a note about a Shapiro-Wilk test of normality.
+#'
+#' @param notes Previous notes.
+#' @param what The aesthetic used to indicate the test result.
+#' @param alpha The alpha level used for testing.
+#'
+#' @return The previous notes with a normality note appended.
+#' @export
+note_normal <- function(notes = NULL, what = "Coloring",
+                        alpha = 0.05) {
+  paste(what,
+        "indicated if a Shapiro-Wilk test of normality",
+        "failed to reject the null hypothesis that the data were",
+        "sampled from a population that was normally distributed",
+        paste0("(p>", alpha, ").")
+  ) -> note
+  note_that(notes, note)
+}
+
+
+#' Appends a note about a p value.
+#'
+#' @param notes The notes.
+#' @param p The p value.
+#' @param with_p Logical.  Prefix with the p character?
+#' @param with_eq Logical.  Use equal sign?
+#'
+#' @return The notes, with a note about a p value appended.
+#' @export
+note_p_value <- function(notes = NULL, p, with_p = TRUE,
+                         with_eq = with_p) {
+  # Start with pvalue format.
+  eq <- if(with_eq) "=" else ""
+  scales::pvalue_format(prefix = c("<", eq, ">"))(p) -> note
+  # Remove the leading zeros.
+  gsub("0\\.", ".", note) -> note
+  if (with_p) {
+    paste0("p", note) -> note
+  }
+  note_that(notes, note)
+}
+
+#' Appends a note about a statistic from a hypothesis test.
+#'
+#' @param notes The notes.
+#' @param h A hypothesis test.
+#'
+#' @return The notes, with a note about the statistic appended.
+#' @export
+note_statistic_htest <- function(notes = NULL, h) {
+  name <- h$statistic %>% attr("name")
+  format(h$statistic, digits = 2) -> note
+  paste0(name, "(", h$parameter, ")=", note) -> note
+  note_that(notes, note)
+}
+
 #' Appends a note about that.
 #'
 #' @param notes The notes.
@@ -744,117 +1029,6 @@ note_that <- function(notes = NULL, ...) {
     paste0(notes, ".")
   else
     notes
-}
-
-#' Performs a correlation test and appends a note about it.
-#'
-#' @param notes The notes.
-#' @param df A data frame.
-#' @param x The column name for the x variable.
-#' @param y The column name for the y variable.
-#' @param alpha The alpha level for the correlation test.
-#' @param ... Additional args for stats::cor.test().
-#'
-#' @return The notes, with a correlation test note appended.
-#' @export
-note_cor_test <- function(notes, df, x, y, alpha = 0.05, ...) {
-  stats::cor.test(df[[x]], df[[y]], ...) -> h
-  w <- ifelse(h$p.value < alpha, "correlated", "not correlated")
-  paste0(x, " and ", y, " were ", w) %>%
-    note_estimate_htest(h) %>%
-    note_statistic_htest(h) %>%
-    note_p_value(h$p.value) %>%
-    paste0(".") -> note
-  if(!is.null(notes) && nchar(notes) > 0)
-    paste0(notes, "  ", note)
-  else
-    note
-}
-
-#' Appends a note about an estimate from a hypothesis test.
-#'
-#' @param notes The notes.
-#' @param h A hypothesis test.
-#'
-#' @return The notes, with a note about an estimate appended.
-#' @export
-note_estimate_htest <- function(notes, h) {
-  name <- gsub("cor", "r", h$estimate %>% attr("name"))
-  format(h$estimate, digits = 2) -> val
-  paste0(name, "(", h$parameter, ")=",
-         ifelse(name == "r",
-                gsub("^-0\\.", "-.", gsub("^0\\.", ".", val)),
-                val)) -> note
-  if(!is.null(notes) && nchar(notes) > 0)
-    paste0(notes, ", ", note)
-  else
-    note
-}
-
-#' Prefixes notes with an intro: Note.
-#'
-#' @param notes The notes.
-#'
-#' @return The notes, prefixed if the intro was missing.
-#' @export
-note_intro <- function(notes) {
-  ifelse(!is.null(notes) && startsWith(notes, "Note."),
-         notes,
-         paste0("Note.  ", notes))
-}
-
-#' Appends a note about a p value.
-#'
-#' @param notes The notes.
-#' @param p The p value.
-#'
-#' @return The notes, with a note about a p value appended.
-#' @export
-note_p_value <- function(notes, p) {
-  scales::pvalue_format(prefix = c("<", "=", ">"))(p) -> note
-  gsub("^(.)0\\.", "\\1.", note) -> note
-  paste0("p", note) -> note
-  if(!is.null(notes) && nchar(notes) > 0)
-    paste0(notes, ", ", note)
-  else
-    note
-}
-
-#' Appends a note about a statistic from a hypothesis test.
-#'
-#' @param notes The notes.
-#' @param h A hypothesis test.
-#'
-#' @return The notes, with a note about the statistic appended.
-#' @export
-note_statistic_htest <- function(notes, h) {
-  name <- h$statistic %>% attr("name")
-  format(h$statistic, digits = 2) -> note
-  paste0(name, "(", h$parameter, ")=", note) -> note
-  if(!is.null(notes) && nchar(notes) > 0)
-    paste0(notes, ", ", note)
-  else
-    note
-}
-
-#' Appends a note about a Shapiro-Wilk test of normality.
-#'
-#' @param notes Previous notes.
-#' @param what The aesthetic used to indicate the test result.
-#' @param alpha The alpha level used for testing.
-#'
-#' @return The previous notes with a normality note appended.
-#' @export
-note_normal <- function(notes = NULL, what = "Coloring",
-                        alpha = 0.05) {
-  paste(what,
-        "indicated if a Shapiro-Wilk test of normality",
-        "failed to reject the null hypothesis that the data were",
-        "sampled from a population that was normally distributed",
-        paste0("(p>", alpha, ").")
-  ) -> note
-  ifelse(is.null(notes) || (nchar(notes) == 0),
-         note, paste0(notes, "  ", note))
 }
 
 #' Performs a dependency check.
@@ -903,11 +1077,7 @@ poisson_lambda_ci <- function(x, ...) {
 #' @return Formatted paragraphs.
 #' @export
 pval_pars <- function(pvals, with_p = TRUE) {
-  # Start with pvalue format.
-  eq <- if(with_p) "=" else ""
-  z <- pvalue_format(prefix = c("<", eq, ">"))(pvals)
-  # Remove the leading zeros.
-  z <- gsub("0\\.", ".", z)
+  z <- note_p_value(p = pvals, with_p = with_p)
   if (with_p) {
     # Create paragraphs with the pvals prefixed with an italic p.
     italic_p <- as_chunk("p", props = fp_text_lite(italic = TRUE))

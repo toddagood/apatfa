@@ -9,8 +9,8 @@
 # only a variable name within a longer axis title.
 
 #' @importFrom broom tidy
-#' @importFrom dplyr across all_of group_by mutate pull rename_with
-#' @importFrom dplyr row_number select summarize
+#' @importFrom dplyr across all_of arrange group_by mutate pull
+#' @importFrom dplyr rename_with row_number select summarize
 #' @importFrom exactci poisson.exact
 #' @importFrom flextable add_footer_lines align as_chunk as_flextable
 #' @importFrom flextable as_i as_paragraph autofit border_remove
@@ -24,7 +24,7 @@
 #' @importFrom ggplot2 geom_point geom_smooth geom_text ggplot
 #' @importFrom ggplot2 layer_data scale_color_manual scale_fill_manual
 #' @importFrom ggplot2 scale_x_continuous scale_y_continuous theme
-#' @importFrom ggplot2 xlab ylab
+#' @importFrom ggplot2 labs xlab ylab stat_qq stat_qq_line
 #' @importFrom ggrepel geom_text_repel
 #' @importFrom graphics abline
 #' @importFrom grid rasterGrob
@@ -36,7 +36,8 @@
 #' @importFrom scales pvalue_format
 #' @importFrom stats AIC BIC formula hatvalues logLik nobs predict resid
 #' @importFrom stats quantile rstandard sd setNames shapiro.test
-#' @importFrom tibble add_column as_tibble_row rowid_to_column
+#' @importFrom tibble add_column as_tibble_col as_tibble_row
+#' @importFrom tibble rowid_to_column
 #' @importFrom tidyr as_tibble everything tibble unnest
 #' @importFrom utils flush.console help
 apatfa_help <- function() {
@@ -256,11 +257,18 @@ word_fields <- function(x) {
   as.character(purrr::map(nt, function(x) paste(x, collapse = "")))
 }
 
-note_table <- function(notes, styles, as_title = FALSE) {
+#' Converts a list of strings to a list of styled paragraphs.
+#'
+#' @param paras A list of strings.
+#' @param styles The styles to apply.
+#' @param as_title If TRUE, apply inverse italics for titles.
+#'
+#' @return A list of styled paragraphs.
+#' @export
+note_paras <- function(notes, styles, as_title = FALSE) {
   defaults <- flextable::get_flextable_defaults()
   props <- officer::fp_text(font.family = defaults$font.family,
-                            font.size = defaults$font.size,
-                            italic = FALSE)
+                            font.size = defaults$font.size)
   iprops <- stats::update(props, italic = TRUE)
   gregexpr("\\b", notes, perl = TRUE) -> m
   regmatches(notes, m, invert = TRUE) %>%
@@ -276,7 +284,16 @@ note_table <- function(notes, styles, as_title = FALSE) {
       }})}) -> notes_chunks
   map(notes_chunks, function(note_chunks) {
     flextable::as_paragraph(list_values = note_chunks)
-  }) -> paras
+  })
+}
+
+#' Converts a list of paragraphs to a flextable with one column.
+#'
+#' @param paras A list of paragraphs.
+#'
+#' @return A flextable.
+#' @export
+note_table <- function(paras) {
   tibble(paras = do.call(c, paras)) %>%
     flextable() %>%
     delete_part(part = "header") %>%
@@ -515,7 +532,7 @@ begin_figure <- function(bookmark,
     if (inherits(title, "flextable")) {
       title
     } else {
-      note_table(title, styles, as_title = TRUE)
+      note_paras(title, styles, as_title = TRUE) %>% note_table()
     }
   title %>% note_widths() -> nws
   tibble(w = nws) %>%
@@ -529,7 +546,7 @@ begin_figure <- function(bookmark,
       if (inherits(notes, "flextable")) {
         notes
       } else {
-        note_table(notes, styles, as_title = FALSE)
+        note_paras(notes, styles, as_title = FALSE) %>% note_table()
       }
     notes %>% note_widths() -> nws
     tibble(w = nws) %>%
@@ -733,7 +750,7 @@ add_table <- function(x, bookmark, title, styles,
     if (inherits(title, "flextable")) {
       title
     } else {
-      note_table(title, styles, as_title = TRUE)
+      note_paras(title, styles, as_title = TRUE) %>% note_table()
     }
   title %>% flextable::width(width = width) -> title
   if (!is.null(notes)) {
@@ -741,7 +758,7 @@ add_table <- function(x, bookmark, title, styles,
       if (inherits(notes, "flextable")) {
         notes
       } else {
-        note_table(notes, styles, as_title = FALSE)
+        note_paras(notes, styles, as_title = FALSE) %>% note_table()
       }
     notes %>% flextable::width(width = width) -> notes
   }

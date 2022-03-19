@@ -4,12 +4,20 @@
 \alias{add_lm_table}
 \title{Adds an lm table.}
 \usage{
-add_lm_table(x, ...)
+add_lm_table(x, bookmark, title, styles, notes = NULL, ...)
 }
 \arguments{
 \item{x}{An lm fit.}
 
-\item{...}{Args for add_table().}
+\item{bookmark}{Bookmark for the table.}
+
+\item{title}{Title for the table.}
+
+\item{styles}{A styles list to use.}
+
+\item{notes}{Notes about the table.}
+
+\item{...}{Additional args for add_table().}
 }
 \value{
 A flextable.

@@ -4,7 +4,7 @@
 \alias{note_statistic_htest}
 \title{Appends a note about a statistic from a hypothesis test.}
 \usage{
-note_statistic_htest(notes, h)
+note_statistic_htest(notes = NULL, h)
 }
 \arguments{
 \item{notes}{The notes.}
