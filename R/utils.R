@@ -405,6 +405,7 @@ add_styling <- function(styles, df) {
 #' @return A paragraph.
 #' @export
 apa_paragraph_md <- function(x, styles, ...) {
+  x <- gsub("\\.  ", ".&nbsp;&nbsp;", x)
   p <- ftExtra::as_paragraph_md(x, ...)
   i <- which(p[[1]]$font.family == "monospace")
   p[[1]][i, "font.family"] <- styles$mono.fontname
@@ -998,8 +999,8 @@ note_fit_model <- function(notes = NULL, fit) {
   fit$terms %>%
     deparse(width.cutoff = 100L) %>%
     as_tibble_col() %>%
-    mutate(i = row_number()) %>%
-    subset(`i` == min(`i`) | `i` == max(`i`)) %>%
+    mutate(lnum = row_number()) -> x
+  x[x$lnum == min(x$lnum) | x$lnum == max(x$lnum),] %>%
     pull(.data$value) %>%
     paste(collapse = "... + ") -> note
   gsub(" +", " ", note) -> note
