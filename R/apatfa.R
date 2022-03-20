@@ -9,37 +9,106 @@
 # only a variable name within a longer axis title.
 
 #' @importFrom broom tidy
-#' @importFrom dplyr across all_of arrange group_by mutate pull
-#' @importFrom dplyr rename_with row_number select summarize
+#' @importFrom dplyr across
+#' @importFrom dplyr all_of
+#' @importFrom dplyr arrange
+#' @importFrom dplyr first
+#' @importFrom dplyr group_by
+#' @importFrom dplyr mutate
+#' @importFrom dplyr pull
+#' @importFrom dplyr rename_with
+#' @importFrom dplyr row_number
+#' @importFrom dplyr select
+#' @importFrom dplyr summarize
 #' @importFrom exactci poisson.exact
-#' @importFrom flextable add_footer_lines align as_chunk as_flextable
-#' @importFrom flextable as_i as_paragraph autofit border_remove
-#' @importFrom flextable colformat_double delete_part flextable font
-#' @importFrom flextable fontsize italic mk_par ncol_keys nrow_part
-#' @importFrom flextable padding set_header_labels width
+#' @importFrom flextable add_footer_lines
+#' @importFrom flextable align
+#' @importFrom flextable as_chunk
+#' @importFrom flextable as_flextable
+#' @importFrom flextable as_i
+#' @importFrom flextable as_paragraph
+#' @importFrom flextable as_sup
+#' @importFrom flextable autofit
+#' @importFrom flextable border_remove
+#' @importFrom flextable colformat_double
+#' @importFrom flextable delete_part
+#' @importFrom flextable flextable
+#' @importFrom flextable font
+#' @importFrom flextable fontsize
+#' @importFrom flextable italic
+#' @importFrom flextable merge_at
+#' @importFrom flextable mk_par
+#' @importFrom flextable ncol_keys
+#' @importFrom flextable nrow_part
+#' @importFrom flextable padding
+#' @importFrom flextable set_formatter
+#' @importFrom flextable set_header_labels
+#' @importFrom flextable valign
+#' @importFrom flextable width
 #' @importFrom ftExtra as_paragraph_md
 #' @importFrom gdtools m_str_extents
-#' @importFrom ggplot2 aes annotation_custom coord_fixed element_blank
-#' @importFrom ggplot2 element_text geom_abline geom_boxplot geom_label
-#' @importFrom ggplot2 geom_point geom_smooth geom_text ggplot
-#' @importFrom ggplot2 layer_data scale_color_manual scale_fill_manual
-#' @importFrom ggplot2 scale_x_continuous scale_y_continuous theme
-#' @importFrom ggplot2 labs xlab ylab stat_qq stat_qq_line
+#' @importFrom ggplot2 aes
+#' @importFrom ggplot2 annotation_custom
+#' @importFrom ggplot2 coord_fixed
+#' @importFrom ggplot2 element_blank
+#' @importFrom ggplot2 element_text
+#' @importFrom ggplot2 geom_abline
+#' @importFrom ggplot2 geom_boxplot
+#' @importFrom ggplot2 geom_label
+#' @importFrom ggplot2 geom_point
+#' @importFrom ggplot2 geom_smooth
+#' @importFrom ggplot2 geom_text
+#' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 labs
+#' @importFrom ggplot2 layer_data
+#' @importFrom ggplot2 scale_color_manual
+#' @importFrom ggplot2 scale_fill_manual
+#' @importFrom ggplot2 scale_x_continuous
+#' @importFrom ggplot2 scale_y_continuous theme
+#' @importFrom ggplot2 stat_qq
+#' @importFrom ggplot2 stat_qq_line
+#' @importFrom ggplot2 xlab
+#' @importFrom ggplot2 ylab
 #' @importFrom ggrepel geom_text_repel
 #' @importFrom graphics abline
 #' @importFrom grid rasterGrob
 #' @importFrom gtools capwords
-#' @importFrom moments kurtosis skewness
-#' @importFrom officer docx_dim fp_text_lite styles_info
-#' @importFrom purrr flatten keep imap map map_chr map_depth
+#' @importFrom moments kurtosis
+#' @importFrom moments skewness
+#' @importFrom officer docx_dim
+#' @importFrom officer fp_text_lite
+#' @importFrom officer styles_info
+#' @importFrom purrr flatten
+#' @importFrom purrr keep
+#' @importFrom purrr imap
+#' @importFrom purrr map
+#' @importFrom purrr map_chr
+#' @importFrom purrr map_depth
 #' @importFrom rlang .data
 #' @importFrom scales pvalue_format
-#' @importFrom stats AIC BIC formula hatvalues logLik nobs predict resid
-#' @importFrom stats quantile rstandard sd setNames shapiro.test
-#' @importFrom tibble add_column as_tibble_col as_tibble_row
+#' @importFrom stats AIC
+#' @importFrom stats BIC
+#' @importFrom stats formula
+#' @importFrom stats hatvalues
+#' @importFrom stats logLik
+#' @importFrom stats nobs
+#' @importFrom stats predict
+#' @importFrom stats quantile
+#' @importFrom stats resid
+#' @importFrom stats rstandard
+#' @importFrom stats sd
+#' @importFrom stats setNames
+#' @importFrom stats shapiro.test
+#' @importFrom tibble add_column
+#' @importFrom tibble as_tibble
+#' @importFrom tibble as_tibble_col
+#' @importFrom tibble as_tibble_row
 #' @importFrom tibble rowid_to_column
-#' @importFrom tidyr as_tibble everything tibble unnest
-#' @importFrom utils flush.console help
+#' @importFrom tibble tibble
+#' @importFrom tidyr everything
+#' @importFrom tidyr unnest
+#' @importFrom utils flush.console
+#' @importFrom utils help
 apatfa_help <- function() {
   help(package = "apatfa")
 }
@@ -259,7 +328,7 @@ word_fields <- function(x) {
 
 #' Converts a list of strings to a list of styled paragraphs.
 #'
-#' @param paras A list of strings.
+#' @param notes A list of strings.
 #' @param styles The styles to apply.
 #' @param as_title If TRUE, apply inverse italics for titles.
 #'

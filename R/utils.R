@@ -219,7 +219,7 @@ as_t <- function(x, props = NULL) {
     props <- officer::fp_text_lite(font.family = defaults$font.family,
                                    font.size = defaults$font.size)
   }
-  as_chunk(x, prop = props)
+  as_chunk(x, props = props)
 }
 
 #' Adds an lm table.
@@ -394,6 +394,25 @@ add_styling <- function(styles, df) {
   return(styles)
 }
 
+#' Converts markdown to a paragraph in APA style.
+#'
+#' Calls ftExtra::as_paragraph_md(...) and then applies APA
+#' styles.
+#'
+#' @param styles The styles list to use.
+#' @param ... The args to pass to ftExtra::as_paragraph_md().
+#' @inheritParams ftExtra::as_paragraph_md
+#' @return A paragraph.
+#' @export
+apa_paragraph_md <- function(x, styles, ...) {
+  p <- ftExtra::as_paragraph_md(x, ...)
+  i <- which(p[[1]]$font.family == "monospace")
+  p[[1]][i, "font.family"] <- styles$mono.fontname
+  p[[1]][i, "font.size"] <- styles$mono.fontsize
+  p[[1]][i, "shading.color"] <- NA
+  p
+}
+
 #' Converts an aov to a flextable.
 #'
 #' @param x An aov.
@@ -418,21 +437,19 @@ as_flextable_aov <- function(x) {
              sub("e-(..)$", "e-0\\1", sprintf("%.2e", x)))
     })
     x <- mk_par(x, j = "signif",
-                value = as_paragraph(signif_format(p.value)) )
-    x <- merge_at(x, j = 5:6, part = "header")
-    x <- align(x, j = "p.value", align = "right")
-    x <- align(x, j = "signif", align = "left")
-    x <- padding(x, j = "p.value", padding.right = 0)
-    x <- padding(x, j = "signif", padding.left = 0)
+                value = as_paragraph(as_sup(as_t(signif_format(.data$p.value)))))
     # Italicize statistics in the header.
     x <- italic(x, j = seq.int(2, 5), part = "header")
     # Italicize variables in the first body column.
     if (b_nrow > 2) {
       x <- italic(x, i = seq.int(2, b_nrow - 1), j = 1, part = "body")
     }
-
-    # Fit to width.
-    return(autofit_width(x))
+    autofit_width(x) %>%
+      merge_at(j = 5:6, part = "header") %>%
+      align(j = 5, align = "right") %>%
+      align(j = 6, align = "left") %>%
+      padding(j = 5, padding.right = 0) %>%
+      padding(j = 6, padding.left = 0)
   }
   tidy(x) %>%
     mutate(across("df", as.integer)) -> tab
@@ -521,7 +538,7 @@ as_flextable.kruskal_effsize <- function(x) {
 
 signif_format <- function(x){
   z <- cut(x, breaks = c(-Inf, 0.001, 0.01, 0.05, 0.1, Inf),
-           labels = c("***", "**", "*", "†", ""))
+           labels = c("***", "**", "*", "\u2020", ""))
   z <- as.character(z)
   z[is.na(x)] <- ""
   z
@@ -550,7 +567,7 @@ as_flextable_lm <- function(x){
     sub("e-(..)$", "e-0\\1", sprintf("%.2e", x))
     })
   ft <- mk_par(ft, j = "signif",
-               value = as_paragraph(as_sup(as_t(signif_format(p.value)))))
+               value = as_paragraph(as_sup(as_t(signif_format(.data$p.value)))))
   ft <- align(ft, j = "signif", align = "left")
   ft <- set_header_labels(ft, term = "Term", estimate = "Estimate",
                           std.error = "SE", statistic = "t",
@@ -982,8 +999,8 @@ note_fit_model <- function(notes = NULL, fit) {
     deparse(width.cutoff = 100L) %>%
     as_tibble_col() %>%
     mutate(i = row_number()) %>%
-    subset(i == min(i) | i == max(i)) %>%
-    pull(value) %>%
+    subset(`i` == min(`i`) | `i` == max(`i`)) %>%
+    pull(.data$value) %>%
     paste(collapse = "... + ") -> note
   gsub(" +", " ", note) -> note
   paste("The model was", note) -> fit_model
@@ -1035,7 +1052,7 @@ note_p_levels <- function() {
        as_t("*") %>% as_sup(),
        as_t("p") %>% as_i(),
        as_t("<.05.  "),
-       as_t("†") %>% as_sup(),
+       as_t("\u2020") %>% as_sup(),
        as_t("p") %>% as_i(),
        as_t("<.10.")) -> note
   as_paragraph(list_values = note)

@@ -7,11 +7,11 @@
 note_paras(notes, styles, as_title = FALSE)
 }
 \arguments{
+\item{notes}{A list of strings.}
+
 \item{styles}{The styles to apply.}
 
 \item{as_title}{If TRUE, apply inverse italics for titles.}
-
-\item{paras}{A list of strings.}
 }
 \value{
 A list of styled paragraphs.
