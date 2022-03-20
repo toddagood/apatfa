@@ -5,7 +5,7 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/toddagood/apatfa/workflows/R-CMD-check/badge.svg)](https://github.com/toddagood/apatfa/actions)
+[![R-CMD-check](https://github.com/toddagood/apatfa/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/toddagood/apatfa/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 The `apatfa` package generates a Word (docx) file containing APA Tables,
