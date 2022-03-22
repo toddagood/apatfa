@@ -379,8 +379,15 @@ note_table <- function(paras) {
 note_lines <- function(x, w) {
   cntl <- function(d) {
     cumsum(d$ws) -> cs
-    i <- which(cs < d$w)
-    d$ws <- d$ws[-i]
+    i <- which(cs <= d$w)
+    if (length(i) == 0) {
+      # Next chunk is wider than w.
+      # Wrapping will start that chunk on a new line and wrap the
+      # chunk over multiple lines breaking it at characters.
+      d$ws[1] <- d$ws[1] - d$w
+    } else {
+      d$ws <- d$ws[-i]
+    }
     d$cnt <- d$cnt + 1
     if (length(d$ws > 0))
       cntl(d)
