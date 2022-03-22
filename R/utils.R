@@ -284,7 +284,7 @@ add_lm_table <- function(x, bookmark, title, styles,
          ", *p*",
          note_p_value(p = g$p.value, with_p = FALSE,
                       with_eq = TRUE)) %>%
-    as_paragraph_md() -> summary_para1
+    apa_paragraph_md(styles) -> summary_para1
 
   paste0("Multiple *R*^2^=",
          format(g$r.squared, format = "f", digits = 2),
@@ -295,14 +295,14 @@ add_lm_table <- function(x, bookmark, title, styles,
          ".  *BIC*=",
          formatC(g$BIC, format = "f", digits = 2),
          ".") %>%
-    as_paragraph_md() -> summary_para2
+    apa_paragraph_md(styles) -> summary_para2
 
   paste0("Residual standard error: ",
          formatC(g$sigma, format = "f", digits = 2),
          " on ",
          format(g$df.residual, big.mark = ","),
          " degrees of freedom.") %>%
-    as_paragraph_md() -> summary_para3
+    apa_paragraph_md(styles) -> summary_para3
 
   quants <- quantile(x$residuals)
   names(quants) <- c("Min", "Q1", "Median", "Q3", "Max")
@@ -312,7 +312,7 @@ add_lm_table <- function(x, bookmark, title, styles,
                 formatC(quants, format = "f", digits = 2),
                 collapse = ", "),
          ".") %>%
-    as_paragraph_md() -> summary_para4
+    apa_paragraph_md(styles) -> summary_para4
 
   do.call(c, c1_paras) -> c1_paras
 
@@ -366,15 +366,16 @@ add_lm_table <- function(x, bookmark, title, styles,
 #'
 #' @param x A glm fit.
 #' @param ... Args for add_table().
+#' @inheritParams add_table
 #'
 #' @return A flextable.
 #' @export
-add_glm_table <- function(x, ...) {
+add_glm_table <- function(x, styles, ...) {
   aic <- formatC(AIC(x), digits = 3, format = "f")
   bic <- formatC(BIC(x), digits = 3, format = "f")
   loglik <- formatC(logLik(x), digits = 2, format = "f")
   n <- nobs(x)
-  sep <- paste0(rep("&nbsp;", 6), collapse = "")
+  sep <- "      "
   glanced <- paste0("AIC: ", aic, sep,
                     "BIC: ", bic, sep,
                     "log(likelihood): ", loglik, sep,
@@ -389,7 +390,8 @@ add_glm_table <- function(x, ...) {
                          statistic = "z")
   x <- italic(x, j = 2:ncol, part = "header")
   if (b_nrow > 1) x <- italic(x, i = 2:b_nrow, j = 1, part = "body")
-  x <- mk_par(x, i = 2, j = 1, value = as_paragraph_md(glanced),
+  x <- mk_par(x, i = 2, j = 1, value = apa_paragraph_md(glanced,
+                                                        styles),
               part = "footer")
   x <- add_footer_lines(x, fm)
   x <- autofit(x)

@@ -4,10 +4,12 @@
 \alias{add_glm_table}
 \title{Adds a glm table.}
 \usage{
-add_glm_table(x, ...)
+add_glm_table(x, styles, ...)
 }
 \arguments{
 \item{x}{A glm fit.}
+
+\item{styles}{A styles list to use.}
 
 \item{...}{Args for add_table().}
 }
