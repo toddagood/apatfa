@@ -376,7 +376,24 @@ note_table <- function(paras) {
     mk_par(value = paras)
 }
 
-note_widths <- function(x) {
+note_lines <- function(x, w) {
+  cntl <- function(d) {
+    cumsum(d$ws) -> cs
+    i <- which(cs < d$w)
+    d$ws <- d$ws[-i]
+    d$cnt <- d$cnt + 1
+    if (length(d$ws > 0))
+      cntl(d)
+    else
+      d
+  }
+
+  ws2ln <- function(ws, w) {
+    d <- list(ws = ws, w = w, cnt = 0)
+    d <- cntl(d)
+    d$cnt
+  }
+
   x$body$content[[1]]$data %>%
     tibble() %>%
     mutate(ft_row_id = row_number()) %>%
@@ -407,9 +424,10 @@ note_widths <- function(x) {
   dimnames(str_extents_) <- list(NULL, c("width", "height"))
   txt_data <- cbind(txt_data, str_extents_)
   txt_data %>%
-    group_by("ft_row_id") %>%
-    summarize(width = sum(width)) %>%
-    pull(width)
+    group_by(across(c("ft_row_id"))) %>%
+    summarize(lns = ws2ln(.data$width, w = w)) %>%
+    pull("lns") %>%
+    sum()
 }
 
 #' Creates an docx file with APA sections containing bookmarked
@@ -598,19 +616,11 @@ begin_figure <- function(bookmark,
   height <- height - reserve
   extra_lines <- 0
   title <- to_note_table(title, styles, as_title = TRUE, width)
-  title %>% note_widths() -> nws
-  tibble(w = nws) %>%
-    mutate(nlines = as.integer(.data$w / width + 1)) %>%
-    summarize(nlines = sum(nlines)) %>%
-    pull(nlines) -> nlines
+  title %>% note_lines(w = width) -> nlines
   extra_lines <- extra_lines + (nlines - 1)
   if (!is.null(notes)) {
     notes <- to_note_table(notes, styles, as_title = FALSE, width)
-    notes %>% note_widths() -> nws
-    tibble(w = nws) %>%
-      mutate(nlines = as.integer(.data$w / width + 1)) %>%
-      summarize(nlines = sum(nlines)) %>%
-      pull(nlines) -> nlines
+    notes %>% note_lines(w = width) -> nlines
     extra_lines <- extra_lines + nlines
   }
   # Reduce the figure height to allow for extra title and notes lines.
