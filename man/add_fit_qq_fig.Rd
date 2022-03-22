@@ -4,7 +4,7 @@
 \alias{add_fit_qq_fig}
 \title{Adds a normal Q-Q plot of residuals.}
 \usage{
-add_fit_qq_fig(fit, bookmark, title, styles)
+add_fit_qq_fig(fit, bookmark, title, styles, alpha = 0.05)
 }
 \arguments{
 \item{fit}{A fit.}
@@ -14,6 +14,8 @@ add_fit_qq_fig(fit, bookmark, title, styles)
 \item{title}{Title for the figure}
 
 \item{styles}{A styles list to use.}
+
+\item{alpha}{The alpha to use for normality tests.}
 }
 \value{
 A figure.

@@ -4,12 +4,14 @@
 \alias{note_that}
 \title{Appends a note about that.}
 \usage{
-note_that(notes = NULL, ...)
+note_that(notes = NULL, ..., with_dot = TRUE)
 }
 \arguments{
 \item{notes}{The notes.}
 
 \item{...}{That to note.}
+
+\item{with_dot}{If TRUE, the note will end in a period.}
 }
 \value{
 The notes, with a note about that appended.

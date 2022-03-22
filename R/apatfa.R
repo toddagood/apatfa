@@ -36,12 +36,16 @@
 #' @importFrom flextable font
 #' @importFrom flextable fontsize
 #' @importFrom flextable italic
+#' @importFrom flextable line_spacing
 #' @importFrom flextable merge_at
+#' @importFrom flextable merge_h
+#' @importFrom flextable merge_v
 #' @importFrom flextable mk_par
 #' @importFrom flextable ncol_keys
 #' @importFrom flextable nrow_part
 #' @importFrom flextable padding
 #' @importFrom flextable set_formatter
+#' @importFrom flextable set_header_df
 #' @importFrom flextable set_header_labels
 #' @importFrom flextable valign
 #' @importFrom flextable width
@@ -88,6 +92,7 @@
 #' @importFrom scales pvalue_format
 #' @importFrom stats AIC
 #' @importFrom stats BIC
+#' @importFrom stats confint
 #' @importFrom stats formula
 #' @importFrom stats hatvalues
 #' @importFrom stats logLik
@@ -491,13 +496,8 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
         }
         x <- officer::body_add_par(x, section, style = "heading 1")
       }
-      bold_t <- officer::fp_text_lite(bold = TRUE)
-      caption_p <- officer::fp_par(line_spacing = 2,
-                                   keep_with_next = TRUE)
-      caption_fpar <- officer::fpar(paste(item$caption, i),
-                                    fp_p = caption_p,
-                                    fp_t = bold_t)
-      x <- officer::body_add_fpar(x, caption_fpar)
+      x <- officer::body_add_par(x, paste(item$caption, i),
+                                 style = "caption")
       x <- officer::body_bookmark(x, bookmark)
       x <- table_adder(x, list(ft = obj$title))
       fp_p <- officer::fp_par(line_spacing = 0)

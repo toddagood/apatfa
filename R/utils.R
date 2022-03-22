@@ -113,10 +113,11 @@ add_fit_op_fig <- function(fit, bookmark, title, styles,
 #'
 #' @param fit A fit.
 #' @inheritParams add_figure
+#' @param alpha The alpha to use for normality tests.
 #'
 #' @return A figure.
 #' @export
-add_fit_qq_fig <- function(fit, bookmark, title, styles) {
+add_fit_qq_fig <- function(fit, bookmark, title, styles, alpha = 0.05) {
   if (!inherits(fit, "lm")) {
     stop("Only fits of class lm are supported.")
   }
@@ -129,15 +130,40 @@ add_fit_qq_fig <- function(fit, bookmark, title, styles) {
          x = "Theoretical Quantile") -> fig
   data %>%
     arrange(.data$sres) %>%
-    mutate(outlier = is_outlier(.data$sres),
+    mutate(Outlier = is_outlier(.data$sres),
            rank = rank(-abs(.data$sres))) %>%
-    mutate(label = ifelse(.data$outlier & .data$rank <= 3,
+    mutate(label = ifelse(.data$Outlier & .data$rank <= 3,
                           .data$label, NA)) -> data
   notes <- if(!is.null(data$label)) {
-    note_that("Outlier residuals were labeled by observation ID.")
+    note_that("The top three outlier residuals",
+              "were labeled by observation ID.")
   } else NULL
+  shapiro.test(data$sres) -> norm1
+  shapiro.test(data[which(data$Outlier == FALSE),]$sres) -> norm2
+  notes <- if (norm1$p.value > alpha) {
+    note_that(notes,
+              "A Shapiro-Wilk test failed to reject the null",
+              "hypothesis that the standard",
+              "residuals were normally distributed,",
+              note_p_value(p = norm1$p.value))
+  } else if (norm2$p.value > alpha) {
+    note_that(notes,
+              "A Shapiro-Wilk test failed to reject the null",
+              "hypothesis that the standard",
+              "residuals (excluding residual outliers)",
+              "were normally distributed,",
+              note_p_value(p = norm2$p.value))
+  } else {
+    NULL
+  }
   notes %>% note_fit_model(fit) -> notes
   fig +
+    geom_point(inherit.aes = FALSE,
+               data = layer_data(fig), aes(.data$x, .data$y,
+                                           color = data$Outlier)) +
+    scale_color_manual(
+      name = "Outlier",
+      values = c("TRUE" = "red", "FALSE" = "black")) +
     geom_text_repel(inherit.aes = FALSE,
                     data = layer_data(fig), aes(.data$x, .data$y),
                     label = data$label, na.rm = TRUE) -> fig
@@ -160,7 +186,8 @@ add_fit_rl_fig <- function(fit, bookmark, title, styles,
   notes %>% note_fit_model(fit) -> notes
   apatfa::begin_figure(bookmark, title, styles,
                        notes = note_intro(notes))
-  plot(fit, which = 5, sub.caption = "")
+  plot(fit, which = 5, sub.caption = "",
+       cook.levels = seq(0.1, 1, 0.1))
   apatfa::end_figure()
   return()
 }
@@ -327,7 +354,7 @@ add_lm_table <- function(x, bookmark, title, styles,
     width(width = width) -> notes
 
   styler(ft, styles) %>%
-    merge_at(i = 1, j = 5:6, part = "header") %>%
+    merge_at(i = 1:2, j = 7:8, part = "header") %>%
     align(j = "p.value", align = "right") %>%
     padding(j = "p.value", padding.right = 0) %>%
     padding(j = "signif", padding.left = 0) %>%
@@ -558,11 +585,33 @@ as_flextable_lm <- function(x){
                "a flextable from an lm object."))
   }
 
-  data_t <- broom::tidy(x)
+  confint(x) %>%
+    as_tibble() %>%
+    setNames(c("CI.LL", "CI.UL")) -> ci
 
-  ft <- flextable(data_t,
-                  col_keys = c("term", "estimate", "std.error",
-                               "statistic", "p.value", "signif"))
+  data_t <- broom::tidy(x) %>%
+    cbind(ci)
+
+  topology <- data.frame(
+    col_keys = c("term", "estimate", "std.error",
+                 "CI.LL", "CI.UL",
+                 "statistic", "p.value",
+                 "signif"),
+    what = c("Term", "Estimate", "SE",
+             "95% CI", "95% CI",
+             "t", "Pr(>|t|)", ""),
+    measure = c("Term", "Estimate", "SE",
+                "LL", "UL",
+                "t", "Pr(>|t|)", ""),
+    stringsAsFactors = FALSE)
+
+  ft <- flextable(data_t, col_keys = topology$col_keys)
+  ft <- set_header_df(ft, mapping = topology, key = "col_keys")
+  ft <- merge_h(ft, part = "header")
+  ft <- merge_v(ft, j = c(1:3, 6:8), part = "header")
+  ft <- valign(ft, valign = "top", part = "header")
+  ft <- line_spacing(ft, space = 1, part = "header")
+  ft <- theme_apa(ft)
   ft <- colformat_double(ft)
   ft <- set_formatter(ft, p.value = function(x) {
     sub("e-(..)$", "e-0\\1", sprintf("%.2e", x))
@@ -570,9 +619,6 @@ as_flextable_lm <- function(x){
   ft <- mk_par(ft, j = "signif",
                value = as_paragraph(as_sup(as_t(signif_format(.data$p.value)))))
   ft <- align(ft, j = "signif", align = "left")
-  ft <- set_header_labels(ft, term = "Term", estimate = "Estimate",
-                          std.error = "SE", statistic = "t",
-                          p.value = "Pr(>|t|)", signif = "" )
   ncol <- ncol_keys(ft)
   b_nrow <- nrow_part(ft, "body")
   ft <- italic(ft, j = 2:ncol, part = "header")
@@ -612,11 +658,11 @@ as_flextable_leveneTest <- function(x) {
   mutate(x, Term = c("Group", "Residuals"), .before = 1) %>%
     flextable() %>%
     italic(i = 1, j = 1) %>%
-    set_header_labels(`F value` = "F", `Pr(>F)` = "Sig.") %>%
+    set_header_labels(`F value` = "F") %>%
     italic(j = 2:4, part = "header") %>%
     colformat_double(na_str = "") %>%
     mk_par(j = "Pr(>F)", part = "body", use_dot = TRUE,
-           value = pval_pars(.data$.)) %>%
+           value = pval_pars(.data$., with_p = FALSE)) %>%
     autofit_width()
 }
 
@@ -965,7 +1011,9 @@ note_cor_test <- function(notes = NULL, df, x, y, alpha = 0.05, ...) {
   w <- ifelse(h$p.value < alpha, "correlated", "not correlated")
   paste0(x, " and ", y, " were ", w) %>%
     note_estimate_htest(h) %>%
+    paste0(", ") %>%
     note_statistic_htest(h) %>%
+    paste0(", ") %>%
     note_p_value(h$p.value) %>%
     paste0(".") -> note
   note_that(notes, note)
@@ -985,7 +1033,7 @@ note_estimate_htest <- function(notes = NULL, h) {
          ifelse(name == "r",
                 gsub("^-0\\.", "-.", gsub("^0\\.", ".", val)),
                 val)) -> note
-  note_that(notes, note)
+  note_that(notes, note, with_dot = FALSE)
 }
 
 #' Appends a note about that.
@@ -1070,15 +1118,8 @@ note_p_levels <- function() {
 #' @export
 note_p_value <- function(notes = NULL, p, with_p = TRUE,
                          with_eq = with_p) {
-  # Start with pvalue format.
-  eq <- if(with_eq) "=" else ""
-  scales::pvalue_format(prefix = c("<", eq, ">"))(p) -> note
-  # Remove the leading zeros.
-  gsub("0\\.", ".", note) -> note
-  if (with_p) {
-    paste0("p", note) -> note
-  }
-  note_that(notes, note)
+  pval(p, with_p = with_p, with_eq = with_eq) -> note
+  note_that(notes, note, with_dot = FALSE)
 }
 
 #' Appends a note about a statistic from a hypothesis test.
@@ -1092,24 +1133,25 @@ note_statistic_htest <- function(notes = NULL, h) {
   name <- h$statistic %>% attr("name")
   format(h$statistic, digits = 2) -> note
   paste0(name, "(", h$parameter, ")=", note) -> note
-  note_that(notes, note)
+  note_that(notes, note, with_dot = FALSE)
 }
 
 #' Appends a note about that.
 #'
 #' @param notes The notes.
 #' @param ... That to note.
+#' @param with_dot If TRUE, the note will end in a period.
 #'
 #' @return The notes, with a note about that appended.
 #' @export
-note_that <- function(notes = NULL, ...) {
+note_that <- function(notes = NULL, ..., with_dot = TRUE) {
   paste(...) -> that
   if(!is.null(notes) && nchar(notes) > 0 &&
      substr(notes, nchar(notes), nchar(notes)) == ".")
     paste(c(notes, that), collapse = "  ") -> notes
   else
     paste(c(notes, that), collapse = " ") -> notes
-  if(!is.null(notes) && nchar(notes) > 0 &&
+  if(with_dot && !is.null(notes) && nchar(notes) > 0 &&
      substr(notes, nchar(notes), nchar(notes)) != ".")
     paste0(notes, ".")
   else
@@ -1154,6 +1196,25 @@ poisson_lambda_ci <- function(x, ...) {
          ymax = pt$conf.int[[2]])
 }
 
+#' Converts p values to formatted text.
+#'
+#' @param p The p values.
+#' @param with_eq Logical.  Use equal sign?
+#' @param with_p Logical.  Prefix with the p character?
+#'
+#' @return Formatted paragraphs.
+#' @export
+pval <- function(p, with_p = TRUE, with_eq = with_p) {
+  eq <- if(with_eq) "=" else ""
+  scales::pvalue_format(prefix = c("<", eq, ">"))(p) -> p
+  # Remove the leading zeros.
+  gsub("0\\.", ".", p) -> p
+  if (with_p) {
+    paste0("p", p) -> p
+  }
+  p
+}
+
 #' Converts p values to formatted paragraphs.
 #'
 #' @param pvals The p values.
@@ -1162,7 +1223,7 @@ poisson_lambda_ci <- function(x, ...) {
 #' @return Formatted paragraphs.
 #' @export
 pval_pars <- function(pvals, with_p = TRUE) {
-  z <- note_p_value(p = pvals, with_p = with_p)
+  z <- pval(pvals, with_p = FALSE)
   if (with_p) {
     # Create paragraphs with the pvals prefixed with an italic p.
     italic_p <- as_chunk("p", props = fp_text_lite(italic = TRUE))
