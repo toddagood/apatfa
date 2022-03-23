@@ -87,7 +87,10 @@ add_fit_op_fig <- function(fit, bookmark, title, styles,
   notes <- if(!is.null(outliers)) {
     note_that("Outliers were labeled by observation ID.")
   } else NULL
-  notes %>% note_fit_model(fit) -> notes
+  notes %>%
+    note_that("Green points indicated the mean observed value",
+              "for each predicted value.") %>%
+    note_fit_model(fit) -> notes
   f <- predict(fit)
   ob <- f + resid(fit)
   opt_outliers <- function() {
@@ -96,13 +99,29 @@ add_fit_op_fig <- function(fit, bookmark, title, styles,
     else
       geom_text_repel(aes(label = outliers), na.rm = TRUE)
   }
+  model.frame(fit) %>%
+    rename_with(~ paste0(".", .x)) %>%
+    group_by(across(-1)) %>%
+    mutate(rn = row_number(), .before = 2) %>%
+    mutate(across(1, mean)) %>%
+    ungroup() %>%
+    select(c(1, 2)) -> m
+  m$x <- fitted(fit)
+  m <- m[which(m$rn == 1),]
+  m %>%
+    rename(y = 1) %>%
+    select(c("x", "y")) -> d2
   fig <-
     ggplot(mapping = aes(f, ob)) +
     geom_point() +
     geom_abline(aes(slope = 1, intercept = 0)) +
     xlab("Predicted") +
     ylab("Observed") +
-    opt_outliers() -> fig
+    opt_outliers() +
+    geom_point(inherit.aes = FALSE, data = d2, aes(.data$x, .data$y),
+               color = "black", shape = 21, fill = "green",
+               size = 2.5, stroke = 2) -> fig
+  styles$italic.cols <- unique(c(styles$italic.cols, "mean"))
   add_figure(fig, bookmark, title, styles,
              notes = note_intro(notes))
 }
@@ -648,6 +667,24 @@ as_flextable.power.htest <- function(x) {
     # Use special formatting for the power values.
     mk_par(j = "Power", part = "body", use_dot = TRUE,
            value = pval_pars(.data$., with_p = FALSE))
+}
+
+#' Converts a Durbin-Watson Test to a flextable.
+#'
+#' @param x A dwt test.
+#'
+#' @return A flextable.
+#' @export
+as_flextable_dwt <- function(x) {
+  tidy(x) %>%
+    rename_with(~ map_chr(.x, title_case)) %>%
+    rename(p = 2) %>%
+    flextable() %>%
+    italic(j = 1:3, part = "header") %>%
+    colformat_double() %>%
+    mk_par(j = "p", part = "body", use_dot = TRUE,
+           value = pval_pars(.data$., with_p = FALSE)) %>%
+    autofit_width()
 }
 
 #' Converts a Levene Test to a flextable.
