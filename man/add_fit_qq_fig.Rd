@@ -9,9 +9,9 @@ add_fit_qq_fig(fit, bookmark, title, styles, alpha = 0.05)
 \arguments{
 \item{fit}{A fit.}
 
-\item{bookmark}{Bookmark for the figure}
+\item{bookmark}{Bookmark for the figure.}
 
-\item{title}{Title for the figure}
+\item{title}{Title for the figure.}
 
 \item{styles}{A styles list to use.}
 

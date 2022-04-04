@@ -54,11 +54,14 @@
 #' @importFrom flextable width
 #' @importFrom ftExtra as_paragraph_md
 #' @importFrom gdtools m_str_extents
+#' @importFrom ggforce FacetGridPaginate
 #' @importFrom ggplot2 aes
+#' @importFrom ggforce n_pages
 #' @importFrom ggplot2 annotation_custom
 #' @importFrom ggplot2 coord_fixed
 #' @importFrom ggplot2 element_blank
 #' @importFrom ggplot2 element_text
+#' @importFrom ggplot2 facet_grid
 #' @importFrom ggplot2 geom_abline
 #' @importFrom ggplot2 geom_boxplot
 #' @importFrom ggplot2 geom_label
@@ -66,6 +69,7 @@
 #' @importFrom ggplot2 geom_smooth
 #' @importFrom ggplot2 geom_text
 #' @importFrom ggplot2 ggplot
+#' @importFrom ggplot2 ggproto
 #' @importFrom ggplot2 labs
 #' @importFrom ggplot2 layer_data
 #' @importFrom ggplot2 scale_color_manual
@@ -89,6 +93,7 @@
 #' @importFrom purrr keep
 #' @importFrom purrr imap
 #' @importFrom purrr map
+#' @importFrom purrr map2
 #' @importFrom purrr map_chr
 #' @importFrom purrr map_depth
 #' @importFrom rlang .data
@@ -96,12 +101,14 @@
 #' @importFrom stats AIC
 #' @importFrom stats BIC
 #' @importFrom stats confint
+#' @importFrom stats confint.default
 #' @importFrom stats fitted
 #' @importFrom stats formula
 #' @importFrom stats hatvalues
 #' @importFrom stats logLik
 #' @importFrom stats model.frame
 #' @importFrom stats nobs
+#' @importFrom stats pchisq
 #' @importFrom stats predict
 #' @importFrom stats quantile
 #' @importFrom stats resid
@@ -116,6 +123,7 @@
 #' @importFrom tibble rowid_to_column
 #' @importFrom tibble tibble
 #' @importFrom tidyr everything
+#' @importFrom tidyr fill
 #' @importFrom tidyr unnest
 #' @importFrom utils flush.console
 #' @importFrom utils help
@@ -382,34 +390,82 @@ note_table <- function(paras) {
 }
 
 note_lines <- function(x, w) {
-  cntl <- function(d) {
-    cumsum(d$ws) -> cs
-    i <- which(cs <= d$w)
+  mark_txt <- function(td) {
+    td %>%
+      mutate(space = grepl("^[[:space:]]*$", .data$txt),
+             hyphen = endsWith(.data$txt, "-") |
+               row_number() == nrow(td))
+  }
+
+  skip_leading_space <- function(td) {
+    td %>%
+      mutate(rn = ifelse(!.data$space, row_number(), NA)) %>%
+      fill(c("rn"), .direction = "down") -> tdp
+    td[!is.na(tdp$rn),]
+  }
+
+  td_within_w <- function(td, w) {
+    td %>%
+      mutate(rn = row_number(),
+             rn.space = ifelse(.data$space, .data$rn, NA)) %>%
+      fill(c("rn.space"), .direction = "up") %>%
+      mutate(
+        cumw = cumsum(.data$width),
+        within_w = (.data$cumw <= w &
+                      (.data$hyphen |
+                         .data$rn.space == .data$rn |
+                         .data$rn.space == .data$rn + 1)),
+        within_w = ifelse(.data$within_w, .data$rn, NA)) %>%
+      fill(c("within_w"), .direction = "up") -> tdp
+    which(!is.na(tdp$within_w))
+  }
+
+  r_cnt_lines <- function(d) {
+    td_within_w(d$td, d$w) -> i
     if (length(i) == 0) {
-      # Next chunk is wider than w.
+      # Next chunk is too wide to fit on a single line.
       # Wrapping will start that chunk on a new line and wrap the
       # chunk over multiple lines breaking it at characters.
-      d$ws[1] <- d$ws[1] - d$w
+      d$td$width[[1]] - d$w -> d$td$width[[1]]
     } else {
-      d$ws <- d$ws[-i]
+      d$td[-i,] %>% skip_leading_space() -> d$td
     }
     d$cnt <- d$cnt + 1
-    if (length(d$ws > 0))
-      cntl(d)
+    if (nrow(d$td) > 0)
+      r_cnt_lines(d)
     else
       d
   }
 
-  ws2ln <- function(ws, w) {
-    d <- list(ws = ws, w = w, cnt = 0)
-    d <- cntl(d)
+  cnt_lines <- function(td, w) {
+    td %>%
+      mark_txt() %>%
+      skip_leading_space() -> td
+    d <- list(td = td, w = w, cnt = 0)
+    d <- r_cnt_lines(d)
     d$cnt
   }
 
   x$body$content[[1]]$data %>%
     tibble() %>%
-    mutate(ft_row_id = row_number()) %>%
     unnest(cols = 1) -> txt_data
+
+  # Wrapping will occur before a space or after a hyphen,
+  # so split the txt_data$txt before spaces and when wrapping
+  # require that the next chunk (if any) starts with a space or the
+  # current chunk ends with a hyphen.
+  sf <- function(txt, m) {
+    if (m < 2) {
+      c(txt)
+    }
+    else {
+      c(substr(txt, 1, m-1), substr(txt, m, nchar(txt)))
+    }
+  }
+  regexpr(" ", txt_data$txt, fixed = T) -> m
+  map2(txt_data$txt, m, sf) -> txt_data$txt
+  txt_data %>% unnest(cols = "txt") -> txt_data
+
   widths <- txt_data$width
   heights <- txt_data$height
   txt_data$width <- NULL
@@ -435,11 +491,7 @@ note_lines <- function(x, w) {
            str_extents_[, 2])
   dimnames(str_extents_) <- list(NULL, c("width", "height"))
   txt_data <- cbind(txt_data, str_extents_)
-  txt_data %>%
-    group_by(across(c("ft_row_id"))) %>%
-    summarize(lns = ws2ln(.data$width, w = w)) %>%
-    pull("lns") %>%
-    sum()
+  cnt_lines(txt_data[,c("txt", "width")], w)
 }
 
 #' Creates an docx file with APA sections containing bookmarked
@@ -594,14 +646,14 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
 #' If a list of strings is provided instead it will be converted
 #' to a flextable with a row for each list item.
 #'
-#' @param bookmark Bookmark for the figure
-#' @param title Title for the figure
+#' @param bookmark Bookmark for the figure.
+#' @param title Title for the figure.
 #' @param styles A styles list to use.
 #' @param notes Notes about the figure.
 #' @param wide Should the figure be displayed in landscape?
-#' @param width Width for the figure in inches
-#' @param height Height for the figure in inches
-#' @param reserve Amount to subtract from the height
+#' @param width Width for the figure in inches.
+#' @param height Height for the figure in inches.
+#' @param reserve Amount to subtract from the height.
 #' @export
 begin_figure <- function(bookmark,
                          title,
@@ -662,49 +714,26 @@ end_figure <- function() {grDevices::dev.off()}
 
 #' Adds a figure
 #'
-#' @param fig The figure
-#' @param bookmark Bookmark for the figure
-#' @param title Title for the figure
-#' @param styles A styles list to use.
-#' @param notes Notes about the figure
-#' @param wide Should the figure be displayed in landscape?
-#' @param width Width for the figure in inches
-#' @param height Height for the figure in inches
-#' @param reserve Amount to subtract from the height
-#' @return The figure
+#' @param fig The figure.
+#' @param ... Args to pass to begin_figure.
+#' @inheritParams begin_figure
+#' @return The figure.
 #' @export
-add_figure <- function(fig, bookmark, title, styles, notes = NULL,
-                       wide = FALSE, width = NULL,
-                       height = NULL, reserve = 0) {
-  print(fig)
-  if (is.null(fig$layout)) {
-    begin_figure(bookmark, title, styles, notes = notes,
-                 wide = wide, width = width,
-                 height = height, reserve = reserve)
+add_figure <- function(fig, bookmark, title, styles, ...) {
+  pages <- NULL
+  if (inherits(fig, "ggplot")) n_pages(fig) -> pages
+  if (is.null(pages) || pages == 1) {
+    print(fig)
+    begin_figure(bookmark, title, styles, ...)
     print(fig)
     end_figure()
   } else {
-    step <- prod(fig$layout)
-    last <- prod(dim(fig))
-    iseq <- seq(1, last, step)
-    for (i in iseq) {
-      afig <- fig[seq(i, min(last, i+step-1))]
-      bookmarki <-
-        if (length(iseq) == 1) bookmark else paste0(bookmark, i)
-      titlei <- if (is.list(title) && !inherits(title, "flextable")) {
-        title[[i]]
-      } else {
-        title
-      }
-      notesi <-
-        if (is.list(notes) && !inherits(notes, "flextable")) {
-          notes[[i]]
-        } else {
-          notes
-        }
-      begin_figure(bookmarki, titlei, styles, notes = notesi,
-                   wide = wide, width = width,
-                   height = height, reserve = reserve)
+    for(page in 1:pages) {
+      afig <- fig
+      afig$facet$params$page <- page
+      title %>% paste(paste0("[Panel ", page, "]")) -> ptitle
+      bookmark %>% paste0("P", page) -> pbookmark
+      begin_figure(pbookmark, ptitle, styles, ...)
       print(afig)
       end_figure()
     }

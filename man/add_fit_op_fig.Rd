@@ -4,18 +4,30 @@
 \alias{add_fit_op_fig}
 \title{Adds an observed versus predicted plot.}
 \usage{
-add_fit_op_fig(fit, bookmark, title, styles, outliers = NULL)
+add_fit_op_fig(
+  fit,
+  bookmark,
+  title,
+  styles,
+  outliers = NULL,
+  predict_type = "response",
+  residual_type = "response"
+)
 }
 \arguments{
 \item{fit}{A fit.}
 
-\item{bookmark}{Bookmark for the figure}
+\item{bookmark}{Bookmark for the figure.}
 
-\item{title}{Title for the figure}
+\item{title}{Title for the figure.}
 
 \item{styles}{A styles list to use.}
 
 \item{outliers}{A vector of labels for outlier points.}
+
+\item{predict_type}{The type for predict().}
+
+\item{residual_type}{The type for residual().}
 }
 \value{
 A figure.

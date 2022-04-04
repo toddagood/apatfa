@@ -4,18 +4,30 @@
 \alias{add_fit_rl_fig}
 \title{Adds a plot of residual by leverage.}
 \usage{
-add_fit_rl_fig(fit, bookmark, title, styles, outliers = NULL)
+add_fit_rl_fig(
+  fit,
+  bookmark,
+  title,
+  styles,
+  outliers = NULL,
+  cook.levels = seq(0.1, 1, 0.1),
+  ...
+)
 }
 \arguments{
-\item{fit}{A fit}
+\item{fit}{A fit.}
 
-\item{bookmark}{Bookmark for the figure}
+\item{bookmark}{Bookmark for the figure.}
 
-\item{title}{Title for the figure}
+\item{title}{Title for the figure.}
 
 \item{styles}{A styles list to use.}
 
 \item{outliers}{A vector of labels for outlier points.}
+
+\item{cook.levels}{A vector of reference levels for Cook's distance.}
+
+\item{...}{Args to pass along to plot().}
 }
 \description{
 Adds a plot of residual by leverage.

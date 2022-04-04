@@ -16,9 +16,9 @@ begin_figure(
 )
 }
 \arguments{
-\item{bookmark}{Bookmark for the figure}
+\item{bookmark}{Bookmark for the figure.}
 
-\item{title}{Title for the figure}
+\item{title}{Title for the figure.}
 
 \item{styles}{A styles list to use.}
 
@@ -26,11 +26,11 @@ begin_figure(
 
 \item{wide}{Should the figure be displayed in landscape?}
 
-\item{width}{Width for the figure in inches}
+\item{width}{Width for the figure in inches.}
 
-\item{height}{Height for the figure in inches}
+\item{height}{Height for the figure in inches.}
 
-\item{reserve}{Amount to subtract from the height}
+\item{reserve}{Amount to subtract from the height.}
 }
 \description{
 The title and notes args accept flextable objects.

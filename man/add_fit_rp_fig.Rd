@@ -9,9 +9,9 @@ add_fit_rp_fig(fit, bookmark, title, styles, outliers = NULL, type = NULL)
 \arguments{
 \item{fit}{A fit}
 
-\item{bookmark}{Bookmark for the figure}
+\item{bookmark}{Bookmark for the figure.}
 
-\item{title}{Title for the figure}
+\item{title}{Title for the figure.}
 
 \item{styles}{A styles list to use.}
 

@@ -9,9 +9,9 @@ add_fit_cook_fig(fit, bookmark, title, styles, outliers = NULL)
 \arguments{
 \item{fit}{A fit}
 
-\item{bookmark}{Bookmark for the figure}
+\item{bookmark}{Bookmark for the figure.}
 
-\item{title}{Title for the figure}
+\item{title}{Title for the figure.}
 
 \item{styles}{A styles list to use.}
 

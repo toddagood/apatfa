@@ -78,12 +78,17 @@ add_fit_figs <- function(fit, num, styles, outliers = NULL,
 #'
 #' @param fit A fit.
 #' @param outliers A vector of labels for outlier points.
+#' @param predict_type The type for predict().
+#' @param residual_type The type for residual().
+#'
 #' @inheritParams add_figure
 #'
 #' @return A figure.
 #' @export
 add_fit_op_fig <- function(fit, bookmark, title, styles,
-                            outliers = NULL) {
+                           outliers = NULL,
+                           predict_type = "response",
+                           residual_type = "response") {
   notes <- if(!is.null(outliers)) {
     note_that("Outliers were labeled by observation ID.")
   } else NULL
@@ -91,8 +96,8 @@ add_fit_op_fig <- function(fit, bookmark, title, styles,
     note_that("Green points indicated the mean observed value",
               "for each predicted value.") %>%
     note_fit_model(fit) -> notes
-  f <- predict(fit)
-  ob <- f + resid(fit)
+  f <- predict(fit, type = predict_type)
+  ob <- f + resid(fit, type = residual_type)
   opt_outliers <- function() {
     if (is.null(outliers))
       theme()
@@ -192,21 +197,23 @@ add_fit_qq_fig <- function(fit, bookmark, title, styles, alpha = 0.05) {
 
 #' Adds a plot of residual by leverage.
 #'
-#' @param fit A fit
+#' @param fit A fit.
 #' @param outliers A vector of labels for outlier points.
+#' @param cook.levels A vector of reference levels for Cook's distance.
+#' @param ... Args to pass along to plot().
 #' @inheritParams add_figure
 #'
 #' @export
 add_fit_rl_fig <- function(fit, bookmark, title, styles,
-                           outliers = NULL) {
+                           outliers = NULL,
+                           cook.levels = seq(0.1, 1, 0.1), ...) {
   notes <- if(!is.null(outliers)) {
     note_that("Outlier residuals were labeled by observation ID.")
   } else NULL
   notes %>% note_fit_model(fit) -> notes
   apatfa::begin_figure(bookmark, title, styles,
                        notes = note_intro(notes))
-  plot(fit, which = 5, sub.caption = "",
-       cook.levels = seq(0.1, 1, 0.1))
+  plot(fit, which = 5, sub.caption = "", ...)
   apatfa::end_figure()
   return()
 }
@@ -252,20 +259,154 @@ add_fit_rp_fig <- function(fit, bookmark, title,
              notes = note_intro(notes))
 }
 
-#' Converts a string to a chunk of text in the default table font.
+#' Adds a glm table.
 #'
-#' @param x A string.
-#' @param props The fp_text properties to use (NULL for default).
+#' @param x A glm fit.
+#' @param profile A profile of the glm object from profile.glm().
+#' @param ... Additional args for add_table().
+#' @inheritParams add_table
 #'
-#' @return A chunk of text.
+#' @return A flextable.
 #' @export
-as_t <- function(x, props = NULL) {
-  if (is.null(props)) {
-    defaults <- flextable::get_flextable_defaults()
-    props <- officer::fp_text_lite(font.family = defaults$font.family,
-                                   font.size = defaults$font.size)
+add_glm_table <- function(x, bookmark, title, styles,
+                         notes = NULL, wide = FALSE, width = NULL,
+                         profile = NULL,
+                         ...) {
+  ft <- as_flextable_glm(x, profile = profile)
+
+  g <- broom::glance(x)
+
+  list(title) %>%
+    note_paras(styles = styles, as_title = TRUE) %>%
+    first() -> header_para
+
+  list("Model:", "Summary:", " ", " ", " ", " ") %>%
+    note_paras(styles = styles) -> c1_paras
+
+  note_fit_model(fit = x) %>%
+    note_paras(styles = styles) %>%
+    first() -> model_para
+
+  delta_df <- g$df.null - g$df.residual
+  delta_dev <- g$null.deviance - g$deviance
+  p.value <- pchisq(delta_dev, delta_df, lower.tail = F)
+  paste0("Test statistic: *X*^2^(",
+         format(delta_df, big.mark = ","),
+         ")=",
+         formatC(delta_dev, format = "f", digits = 2),
+         ", *p*",
+         note_p_value(p = p.value, with_p = FALSE,
+                      with_eq = TRUE),
+         ".") %>%
+    apa_paragraph_md(styles) -> summary_para1
+
+  paste0("Information Criteria: *AIC*=",
+         formatC(g$AIC, format = "f", digits = 2),
+         ".  *BIC*=",
+         formatC(g$BIC, format = "f", digits = 2),
+         ".") %>%
+    apa_paragraph_md(styles) -> summary_para2
+
+  paste0("Null deviance: ",
+         formatC(g$null.deviance, format = "f", digits = 2),
+         " on ",
+         format(g$df.null, big.mark = ","),
+         " degrees of freedom.") %>%
+    apa_paragraph_md(styles) -> summary_para3
+
+  paste0("Residual deviance: ",
+         formatC(g$deviance, format = "f", digits = 2),
+         " on ",
+         format(g$df.residual, big.mark = ","),
+         " degrees of freedom.") %>%
+    apa_paragraph_md(styles) -> summary_para4
+
+  quants <- quantile(resid(x, type = "deviance"))
+  names(quants) <- c("Min", "Q1", "Median", "Q3", "Max")
+  paste0("Deviance Residuals: ",
+         paste0("*", names(quants),
+                "*=",
+                formatC(quants, format = "f", digits = 2),
+                collapse = ", "),
+         ".") %>%
+    apa_paragraph_md(styles) -> summary_para5
+
+  do.call(c, c1_paras) -> c1_paras
+
+  c(model_para,
+    summary_para1,
+    summary_para2,
+    summary_para3,
+    summary_para4,
+    summary_para5) -> c2_paras
+
+  if (is.null(width)) {
+    width <-
+      if (wide) styles$landscape.width else styles$portrait.width
   }
-  as_chunk(x, props = props)
+
+  defaults <- flextable::get_flextable_defaults()
+  big_border <- officer::fp_border(width = 2,
+                                   color = defaults$border.color)
+  lw <- 0.9
+  tibble(c1 = c1_paras, c2 = c2_paras) %>%
+    flextable() %>%
+    border_remove() %>%
+    padding(padding.left = 0, part = "header") %>%
+    mk_par(value = .data$., use_dot = TRUE) %>%
+    valign(valign = "top") %>%
+    width(j = 1, width = lw) %>%
+    width(j = 2, width = width - lw) %>%
+    mk_par(j = 1, value = header_para, part = "header") %>%
+    merge_at(j = 1:2, part = "header") %>%
+    align(align = "left", part = "all") %>%
+    flextable::hline_bottom(border = big_border, part = "header") %>%
+    flextable::hline(i = 1, border = big_border, part = "body") -> title
+
+  note_p_levels() -> stat_para
+
+  notes %>%
+    note_paras(styles = styles) -> paras
+  paras[[length(paras) + 1]] <- stat_para
+  note_table(paras) %>%
+    width(width = width) -> notes
+
+  styler(ft, styles) %>%
+    merge_at(i = 1:2, j = 7:8, part = "header") %>%
+    align(j = "p.value", align = "right") %>%
+    padding(j = "p.value", padding.right = 0) %>%
+    padding(j = "signif", padding.left = 0) %>%
+    add_table(bookmark, title, styles, notes = notes,
+              wide = wide, width = width, ...)
+}
+
+# Old version.
+add_glm_table_old <- function(x, styles, ...) {
+  aic <- formatC(AIC(x), digits = 3, format = "f")
+  bic <- formatC(BIC(x), digits = 3, format = "f")
+  loglik <- formatC(logLik(x), digits = 2, format = "f")
+  n <- nobs(x)
+  sep <- "      "
+  glanced <- paste0("AIC: ", aic, sep,
+                    "BIC: ", bic, sep,
+                    "log(likelihood): ", loglik, sep,
+                    "n: ", n)
+  fm <- paste("Model:", deparse1(x$formula))
+  x <- as_flextable(x)
+  ncol <- ncol_keys(x)
+  b_nrow <- nrow_part(x, "body")
+  x <- set_header_labels(x,
+                         term = "Term",
+                         std.error = "SE",
+                         statistic = "z")
+  x <- italic(x, j = 2:ncol, part = "header")
+  if (b_nrow > 1) x <- italic(x, i = 2:b_nrow, j = 1, part = "body")
+  x <- mk_par(x, i = 2, j = 1, value = apa_paragraph_md(glanced,
+                                                        styles),
+              part = "footer")
+  x <- add_footer_lines(x, fm)
+  x <- autofit(x)
+  add_table(x, ...)
 }
 
 #' Adds an lm table.
@@ -381,42 +522,6 @@ add_lm_table <- function(x, bookmark, title, styles,
               wide = wide, width = width, ...)
 }
 
-#' Adds a glm table.
-#'
-#' @param x A glm fit.
-#' @param ... Args for add_table().
-#' @inheritParams add_table
-#'
-#' @return A flextable.
-#' @export
-add_glm_table <- function(x, styles, ...) {
-  aic <- formatC(AIC(x), digits = 3, format = "f")
-  bic <- formatC(BIC(x), digits = 3, format = "f")
-  loglik <- formatC(logLik(x), digits = 2, format = "f")
-  n <- nobs(x)
-  sep <- "      "
-  glanced <- paste0("AIC: ", aic, sep,
-                    "BIC: ", bic, sep,
-                    "log(likelihood): ", loglik, sep,
-                    "n: ", n)
-  fm <- paste("Model:", deparse1(x$formula))
-  x <- as_flextable(x)
-  ncol <- ncol_keys(x)
-  b_nrow <- nrow_part(x, "body")
-  x <- set_header_labels(x,
-                         term = "Term",
-                         std.error = "SE",
-                         statistic = "z")
-  x <- italic(x, j = 2:ncol, part = "header")
-  if (b_nrow > 1) x <- italic(x, i = 2:b_nrow, j = 1, part = "body")
-  x <- mk_par(x, i = 2, j = 1, value = apa_paragraph_md(glanced,
-                                                        styles),
-              part = "footer")
-  x <- add_footer_lines(x, fm)
-  x <- autofit(x)
-  add_table(x, ...)
-}
-
 #' Adds styling for the columns of a data frame.
 #'
 #' Factor and logical columns will use mono face for values.  All
@@ -462,6 +567,7 @@ apa_paragraph_md <- function(x, styles, ...) {
   p
 }
 
+
 #' Converts an aov to a flextable.
 #'
 #' @param x An aov.
@@ -506,6 +612,24 @@ as_flextable_aov <- function(x) {
     styler()
 }
 
+#' Converts a Durbin-Watson Test to a flextable.
+#'
+#' @param x A dwt test.
+#'
+#' @return A flextable.
+#' @export
+as_flextable_dwt <- function(x) {
+  tidy(x) %>%
+    rename_with(~ map_chr(.x, title_case)) %>%
+    rename(p = 2) %>%
+    flextable() %>%
+    italic(j = 1:3, part = "header") %>%
+    colformat_double() %>%
+    mk_par(j = "p", part = "body", use_dot = TRUE,
+           value = pval_pars(.data$., with_p = FALSE)) %>%
+    autofit_width()
+}
+
 #' Converts an effectsize_anova to a flextable.
 #'
 #' @param x An effectsize_anova, such as from effectsize::eta_squared().
@@ -529,6 +653,66 @@ as_flextable.effectsize_anova <- function(x) {
     rename_with(function(ns) map_chr(ns, title_case)) %>%
     flextable() %>%
     styler()
+}
+
+#' Converts a glm to a flextable.
+#'
+#' @param x A glm object.
+#' @param profile A profile of the glm object from profile.glm().
+#'
+#' @return A flextable.
+#' @export
+as_flextable_glm <- function(x, profile = NULL){
+
+  if( !requireNamespace("broom", quietly = TRUE) ){
+    stop(paste("broom package should be installed to create",
+               "a flextable from a glm object."))
+  }
+
+  if (is.null(profile)) {
+    confint(x) -> ci
+  } else {
+    confint(profile) -> ci
+  }
+  ci %>%
+    as.vector() %>%
+    matrix(ncol = 2) -> cim
+  tibble(CI.LL = cim[,1], CI.UL = cim[,2]) -> ci
+
+  data_t <- cbind(broom::tidy(x), ci)
+
+  topology <- data.frame(
+    col_keys = c("term", "estimate", "std.error",
+                 "CI.LL", "CI.UL",
+                 "statistic", "p.value",
+                 "signif"),
+    what = c("Term", "Estimate", "SE",
+             "95% CI", "95% CI",
+             "z", "Pr(>|z|)", ""),
+    measure = c("Term", "Estimate", "SE",
+                "LL", "UL",
+                "z", "Pr(>|z|)", ""),
+    stringsAsFactors = FALSE)
+
+  ft <- flextable(data_t, col_keys = topology$col_keys)
+  ft <- set_header_df(ft, mapping = topology, key = "col_keys")
+  ft <- merge_h(ft, part = "header")
+  ft <- merge_v(ft, j = c(1:3, 6:8), part = "header")
+  ft <- valign(ft, valign = "top", part = "header")
+  ft <- line_spacing(ft, space = 1, part = "header")
+  ft <- theme_apa(ft)
+  ft <- colformat_double(ft)
+  ft <- set_formatter(ft, p.value = function(x) {
+    sub("e-(..)$", "e-0\\1", sprintf("%.2e", x))
+  })
+  ft <- mk_par(ft, j = "signif",
+               value = as_paragraph(as_sup(as_t(signif_format(.data$p.value)))))
+  ft <- align(ft, j = "signif", align = "left")
+  ncol <- ncol_keys(ft)
+  b_nrow <- nrow_part(ft, "body")
+  ft <- italic(ft, j = 2:ncol, part = "header")
+  if (b_nrow > 1) ft <- italic(ft, i = 2:b_nrow, j = 1, part = "body")
+  ft
 }
 
 #' Converts an htest to a flextable.
@@ -585,12 +769,22 @@ as_flextable.kruskal_effsize <- function(x) {
     styler()
 }
 
-signif_format <- function(x){
-  z <- cut(x, breaks = c(-Inf, 0.001, 0.01, 0.05, 0.1, Inf),
-           labels = c("***", "**", "*", "\u2020", ""))
-  z <- as.character(z)
-  z[is.na(x)] <- ""
-  z
+#' Converts a Levene Test to a flextable.
+#'
+#' @param x A Levene test.
+#'
+#' @return A flextable.
+#' @export
+as_flextable_leveneTest <- function(x) {
+  mutate(x, Term = c("Group", "Residuals"), .before = 1) %>%
+    flextable() %>%
+    italic(i = 1, j = 1) %>%
+    set_header_labels(`F value` = "F") %>%
+    italic(j = 2:4, part = "header") %>%
+    colformat_double(na_str = "") %>%
+    mk_par(j = "Pr(>F)", part = "body", use_dot = TRUE,
+           value = pval_pars(.data$., with_p = FALSE)) %>%
+    autofit_width()
 }
 
 #' Converts an lm to a flextable.
@@ -599,7 +793,7 @@ signif_format <- function(x){
 #'
 #' @return A flextable.
 #' @export
-as_flextable_lm <- function(x){
+as_flextable_lm <- function(x) {
 
   if( !requireNamespace("broom", quietly = TRUE) ){
     stop(paste("broom package should be installed to create",
@@ -636,7 +830,7 @@ as_flextable_lm <- function(x){
   ft <- colformat_double(ft)
   ft <- set_formatter(ft, p.value = function(x) {
     sub("e-(..)$", "e-0\\1", sprintf("%.2e", x))
-    })
+  })
   ft <- mk_par(ft, j = "signif",
                value = as_paragraph(as_sup(as_t(signif_format(.data$p.value)))))
   ft <- align(ft, j = "signif", align = "left")
@@ -646,7 +840,6 @@ as_flextable_lm <- function(x){
   if (b_nrow > 1) ft <- italic(ft, i = 2:b_nrow, j = 1, part = "body")
   ft
 }
-
 
 #' Converts a power.htest to a flextable.
 #'
@@ -667,42 +860,6 @@ as_flextable.power.htest <- function(x) {
     # Use special formatting for the power values.
     mk_par(j = "Power", part = "body", use_dot = TRUE,
            value = pval_pars(.data$., with_p = FALSE))
-}
-
-#' Converts a Durbin-Watson Test to a flextable.
-#'
-#' @param x A dwt test.
-#'
-#' @return A flextable.
-#' @export
-as_flextable_dwt <- function(x) {
-  tidy(x) %>%
-    rename_with(~ map_chr(.x, title_case)) %>%
-    rename(p = 2) %>%
-    flextable() %>%
-    italic(j = 1:3, part = "header") %>%
-    colformat_double() %>%
-    mk_par(j = "p", part = "body", use_dot = TRUE,
-           value = pval_pars(.data$., with_p = FALSE)) %>%
-    autofit_width()
-}
-
-#' Converts a Levene Test to a flextable.
-#'
-#' @param x A Levene test.
-#'
-#' @return A flextable.
-#' @export
-as_flextable_leveneTest <- function(x) {
-  mutate(x, Term = c("Group", "Residuals"), .before = 1) %>%
-    flextable() %>%
-    italic(i = 1, j = 1) %>%
-    set_header_labels(`F value` = "F") %>%
-    italic(j = 2:4, part = "header") %>%
-    colformat_double(na_str = "") %>%
-    mk_par(j = "Pr(>F)", part = "body", use_dot = TRUE,
-           value = pval_pars(.data$., with_p = FALSE)) %>%
-    autofit_width()
 }
 
 #' Converts an raov to a flextable.
@@ -798,6 +955,40 @@ as_flextable.TukeyHSD <- function(x) {
     styler()
 }
 
+#' Converts a vector of strings to a phrase.
+#'
+#' @param g A vector of strings.
+#'
+#' @return A phrase.
+#' @export
+#'
+#' @examples
+#' as_phrase(c("A", "B", "C"))
+as_phrase <- function(g) {
+  len_g <- length(g)
+  if (len_g == 0) ""
+  else if (len_g == 1) g[[1]]
+  else if (len_g == 2) paste(g, collapse = " and ")
+  else paste0(paste(g[-len_g], collapse = ", "),
+              ", and ", g[[len_g]])
+}
+
+#' Converts a string to a chunk of text in the default table font.
+#'
+#' @param x A string.
+#' @param props The fp_text properties to use (NULL for default).
+#'
+#' @return A chunk of text.
+#' @export
+as_t <- function(x, props = NULL) {
+  if (is.null(props)) {
+    defaults <- flextable::get_flextable_defaults()
+    props <- officer::fp_text_lite(font.family = defaults$font.family,
+                                   font.size = defaults$font.size)
+  }
+  as_chunk(x, props = props)
+}
+
 #' Conditionally blanks the x axis.
 #'
 #' @param cond The condition when the x axis should be blank.
@@ -869,6 +1060,26 @@ dstats_row <- function(name, df) {
     unnest(everything()) %>%
     mutate(Variable = !!name, .before = 1)
 }
+
+#' @title Split facet_grid over multiple plots
+#' @inherit ggforce::facet_grid_paginate description details params
+#' @param ... Args to pass along to facet_grid.
+#' @export
+facet_grid_paginate <-
+  function (..., shrink = TRUE, ncol = NULL, nrow = NULL, page = 1,
+            byrow = TRUE)
+  {
+    facet <- facet_grid(..., shrink = shrink)
+    if (is.null(nrow) || is.null(ncol)) {
+      facet
+    }
+    else {
+      ggproto(NULL, FacetGridPaginate, shrink = shrink,
+              params = c(facet$params,
+                         list(ncol = ncol, nrow = nrow, page = page,
+                              byrow = byrow)))
+    }
+  }
 
 #' Gets a styles list.
 #'
@@ -1075,6 +1286,20 @@ note_estimate_htest <- function(notes = NULL, h) {
   note_that(notes, note, with_dot = FALSE)
 }
 
+#' Appends a note about faceting.
+#'
+#' @param notes The notes.
+#' @param facet_vars A vector of facet variable names.
+#'
+#' @return The notes, with a note about faceting appended.
+#' @export
+note_facets <- function(notes = NULL, facet_vars) {
+  if (length(facet_vars) == 0) return(notes)
+  notes %>%
+    note_that(as_phrase(facet_vars), "values were indicated",
+              "by the strip label.")
+}
+
 #' Appends a note about that.
 #'
 #' @param notes The notes.
@@ -1102,9 +1327,11 @@ note_fit_model <- function(notes = NULL, fit) {
 #' @return The notes, prefixed if the intro was missing.
 #' @export
 note_intro <- function(notes) {
-  ifelse(!is.null(notes) && startsWith(notes, "Note."),
-         notes,
-         paste0("Note.  ", notes))
+  if (is.null(notes) || startsWith(notes, "Note.")) {
+    notes
+  } else {
+    paste0("Note.  ", notes)
+  }
 }
 
 #' Appends a note about a Shapiro-Wilk test of normality.
@@ -1313,6 +1540,20 @@ scale_fill_true_false <- function(styles = get_styles()) {
 #' @export
 scale_fill_yes_no_na <- function(styles = get_styles()) {
   scale_fill_manual(values = styles$colors.yes_no_na)
+}
+
+#' Returns significance codes using asterisk and dagger characters.
+#'
+#' @param x The p values.
+#'
+#' @return Significance codes.
+#' @export
+signif_format <- function(x){
+  z <- cut(x, breaks = c(-Inf, 0.001, 0.01, 0.05, 0.1, Inf),
+           labels = c("***", "**", "*", "\u2020", ""))
+  z <- as.character(z)
+  z[is.na(x)] <- ""
+  z
 }
 
 #' Creates an attribution label for maps provided by Stamen Design.

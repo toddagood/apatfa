@@ -4,14 +4,36 @@
 \alias{add_glm_table}
 \title{Adds a glm table.}
 \usage{
-add_glm_table(x, styles, ...)
+add_glm_table(
+  x,
+  bookmark,
+  title,
+  styles,
+  notes = NULL,
+  wide = FALSE,
+  width = NULL,
+  profile = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{A glm fit.}
 
+\item{bookmark}{Bookmark for the table.}
+
+\item{title}{Title for the table.}
+
 \item{styles}{A styles list to use.}
 
-\item{...}{Args for add_table().}
+\item{notes}{Notes about the table.}
+
+\item{wide}{Should the table be displayed in landscape?}
+
+\item{width}{Width for the table in inches.}
+
+\item{profile}{A profile of the glm object from profile.glm().}
+
+\item{...}{Additional args for add_table().}
 }
 \value{
 A flextable.

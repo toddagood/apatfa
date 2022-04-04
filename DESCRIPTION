@@ -29,6 +29,7 @@ Imports:
     flextable,
     ftExtra,
     gdtools,
+    ggforce,
     ggplot2,
     ggrepel,
     grDevices,
