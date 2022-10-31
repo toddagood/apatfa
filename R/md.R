@@ -2,21 +2,24 @@
 # for tables and figures.
 
 md_to_xml <- function(x) {
-  # Supports **bold** and __bold__,
+  # Supports **bold** and __bold__
   x <- gsub("\\*\\*(.*?)\\*\\*", "<bold>\\1</bold>", x)
   x <- gsub("__(.*?)__", "<bold>\\1</bold>", x)
 
-  # Supports *italic* and _italic_,
+  # Supports *italic* and _italic_
   x <- gsub("\\*(.*?)\\*", "<italic>\\1</italic>", x)
   x <- gsub("_(.*?)_", "<italic>\\1</italic>", x)
 
-  # Supports ^^superscript^^ and ^superscript^,
+  # Supports ^^superscript^^ and ^superscript^
   x <- gsub("\\^\\^(.*?)\\^\\^", "<sup>\\1</sup>", x)
   x <- gsub("\\^(.*?)\\^", "<sup>\\1</sup>", x)
 
-  # Supports ~~subscript~~ and ~subscript~
+  # Supports ~~subscript~~ and ~subscript
   x <- gsub("~~(.*?)~~", "<sub>\\1</sub>", x)
   x <- gsub("~(.*?)~", "<sub>\\1</sub>", x)
+
+  # Supports `code`
+  x <- gsub("\\`(.*?)\\`", "<code>\\1</code>", x)
 
   # Enclose in a body node with white-space preserved.
   paste0(c("<body xml:space=\"preserve\">", x, "</body>"), collapse="")
@@ -28,6 +31,8 @@ update_i <-
   function(x) officer::ftext(x$value, stats::update(x$p, italic=TRUE))
 update_v <-
   function(x, v) officer::ftext(x$value, stats::update(x$p, vertical.align=v))
+update_code <-
+  function(x) officer::ftext(x$value, stats::update(x$p, font.family="Courier New", font.size=10))
 
 to_fpar <- function(node, prop) {
   if (xml2::xml_name(node) == "text") {
@@ -40,7 +45,8 @@ to_fpar <- function(node, prop) {
          bold = lapply(chunks, update_b),
          italic = lapply(chunks, update_i),
          sup = lapply(chunks, update_v, "superscript"),
-         sub = lapply(chunks, update_v, "subscript")
+         sub = lapply(chunks, update_v, "subscript"),
+         code = lapply(chunks, update_code)
   )
 }
 
