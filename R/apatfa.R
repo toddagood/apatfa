@@ -578,8 +578,14 @@ apa_docx <- function(path = NULL, target = NULL, here = NULL,
         }
         x <- officer::body_add_par(x, section, style = "heading 1")
       }
-      x <- officer::body_add_par(x, paste(item$caption, i),
-                                 style = "caption")
+      cap_style_p <-
+        officer::fp_par(line_spacing = 2,
+                        keep_with_next = TRUE)
+      cap_style_t <-
+        officer::fp_text_lite(bold = TRUE)
+      cap <- officer::fpar(paste(item$caption, i),
+                           fp_p = cap_style_p, fp_t = cap_style_t)
+      x <- officer::body_add_fpar(x, cap)
       x <- officer::body_bookmark(x, bookmark)
       x <- table_adder(x, list(ft = obj$title))
       fp_p <- officer::fp_par(line_spacing = 0)
