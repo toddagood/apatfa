@@ -8,10 +8,13 @@
 add_anova_table <- function(x, ...) {
   models <- attr(x, "heading")[[2]]
   x <- rowid_to_column(x, "Model")
+  x <- mutate(x, across(contains("Df"), as.integer))
   x <- as_flextable(x)
-  x <- italic(x, j = 2:6, part = "header")
-  x <- colformat_double(x, j = 3:5, na_str = "")
-  x <- mk_par(x, j = 6, part = "body", use_dot = TRUE,
+  col_cnt <- ncol_keys(x)
+  x <- italic(x, j = 2:col_cnt, part = "header")
+  x <- colformat_int(x, na_str = "")
+  x <- colformat_double(x, na_str = "")
+  x <- mk_par(x, j = "Pr(>F)", part = "body", use_dot = TRUE,
               value = pval_pars(.data$.))
   x <- add_footer_lines(x, models)
   x <- autofit(x)
@@ -1091,16 +1094,16 @@ get_styles <- function() {
                     "Min", "Q1", "Median", "Mean", "Q3", "Max",
                     "Range", "IQR", "SD", "Skewness", "Kurtosis",
                     "p", "r", "t", "H", "W", "F", "df"),
-    italic = element_text(face = "italic"),
+    italic = element_markdown(face = "italic"),
     mono.cols = c(),
     mono.words = c("NA"),
-    mono = element_text(family = "Courier New", size = 10),
+    mono = element_markdown(family = "Courier New", size = 10),
     mono.fontname = "Courier New",
     mono.fontsize = 10,
     mono.fontsize.geom_text = 10 * 0.3,
-    bold = element_text(face = "bold"),
-    bold.italic = element_text(face = "bold.italic"),
-    plain = element_text(family = "Arial", size = 12, face = "plain"),
+    bold = element_markdown(face = "bold"),
+    bold.italic = element_markdown(face = "bold.italic"),
+    plain = element_markdown(family = "Arial", size = 12, face = "plain"),
     colors.yes_no_na = c(
       "Yes" = "#4DB6D0",
       "No" = "#D9717D",
