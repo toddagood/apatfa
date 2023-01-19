@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 # apatfa
 
 <!-- badges: start -->
-[![R-CMD-check](https://github.com/toddagood/apatfa/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/toddagood/apatfa/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/toddagood/apatfa/actions/workflows/check-standard.yaml/badge.svg)](https://github.com/toddagood/apatfa/actions/workflows/check-standard.yaml)
 <!-- badges: end -->
 
 The `apatfa` package generates a Word (docx) file containing APA Tables, Figures, and Appendix sections.

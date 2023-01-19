@@ -5,7 +5,7 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/toddagood/apatfa/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/toddagood/apatfa/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/toddagood/apatfa/actions/workflows/check-standard.yaml/badge.svg)](https://github.com/toddagood/apatfa/actions/workflows/check-standard.yaml)
 <!-- badges: end -->
 
 The `apatfa` package generates a Word (docx) file containing APA Tables,
@@ -65,18 +65,18 @@ packages.
 
 Here are the basic steps for using `apatfa` to create a paper:
 
--   To get started, download (usually from your company or institution)
-    a Word (docx) file containing a title page template, headers,
-    footers, and pre-defined APA styles for paragraphs and fonts.
+- To get started, download (usually from your company or institution) a
+  Word (docx) file containing a title page template, headers, footers,
+  and pre-defined APA styles for paragraphs and fonts.
 
--   Use `Word > Insert > Quick Parts > Field` to insert an
-    `{IncludeText "output_file.docx"}` field right after the
-    ‘References’ section in your paper. Note that `apatfa` does not
-    attempt to automate generation of the ‘References’ section because
-    there are several good reference management tools available that
-    integrate directly into the `Word > References` menu.
+- Use `Word > Insert > Quick Parts > Field` to insert an
+  `{IncludeText "output_file.docx"}` field right after the ‘References’
+  section in your paper. Note that `apatfa` does not attempt to automate
+  generation of the ‘References’ section because there are several good
+  reference management tools available that integrate directly into the
+  `Word > References` menu.
 
--   Install and load the `apatfa` package in R:
+- Install and load the `apatfa` package in R:
 
 ``` r
 install.packages("devtools")
@@ -84,87 +84,83 @@ install_github("toddagood/apatfa")
 library(apatfa)
 ```
 
--   Ensure that Arial, Courier New, and Times New Roman fonts are
-    installed on your computer (such as in the Windows font registry),
-    that the `extrafont` R package is installed, and that
-    `extrafont::loadfonts()` can load those fonts. Confirm that the
-    fonts have been loaded by calling `extrafont::fonts()` in R.
+- Ensure that Arial, Courier New, and Times New Roman fonts are
+  installed on your computer (such as in the Windows font registry),
+  that the `extrafont` R package is installed, and that
+  `extrafont::loadfonts()` can load those fonts. Confirm that the fonts
+  have been loaded by calling `extrafont::fonts()` in R.
 
 ``` r
 extrafont::fonts()
 ```
 
--   Create a simple ‘R script’ (not ‘R Markdown’ or ‘R Notebook’)
-    containing the following calls:
+- Create a simple ‘R script’ (not ‘R Markdown’ or ‘R Notebook’)
+  containing the following calls:
 
-    -   Call `get_styles() -> styles` to get a customizable styles list.
-    -   Call `set_apa_defaults()` to set APA themes as the defaults for
-        flextables and ggplots.
-    -   Call `init_tfas()` to initialize/reset the list of table,
-        figure, and appendix content.
-    -   Call `add_styling(styles, df) -> styles` to add automatic
-        styling for column names and values in a data frame based on the
-        class of the column (factor, logical, numeric, string) or
-        directly manipulate the styles list to adjust styling as needed.
-    -   Call `tibble(...) %>% flextable() %>% styler(styles)` to create
-        an APA styled flextable. Numeric columns will be center-aligned
-        and decimal aligned by default. The `styles` list will control
-        other styling options. The styling can also be touched-up using
-        `flextable` functions if needed.
-    -   Short-cuts are available to create specially formatted analysis
-        result tables. For example: `aov(...) %>%   as_flextable_aov()`.
-    -   Call
-        `add_table(x, bookmark, title, styles, notes = NULL,   wide = FALSE, ...)`
-        to add an APA styled flextable, `x`, as a bookmarked table with
-        the given `title`, `styles`, and `notes`. If the table is wide,
-        use `wide = TRUE` to display that table in landscape
-        orientation. There are functions available to assist with
-        preparing the title and notes args. The `bookmark` string must
-        start with “t” (for table) and be less than 40 characters long.
-    -   Call `add_figure(fig, bookmark, title, styles, ...)` to add a
-        ggplot as a bookmarked figure with the given `title`, `styles`,
-        and `notes`. If the figure is wide, use `wide = TRUE` to display
-        that figure in landscape orientation. The `bookmark` string must
-        start with “f” (for figure) and be less than 40 characters long.
-    -   Call `add_appendix(bookmark, fun, wide = FALSE)` to add a
-        bookmarked appendix. The bookmark string must start with “a”
-        (for appendix) and be less than 40 characters long. The `fun`
-        function must accept an rdocx object and use commands from the
-        `officer` package to add appendix content and return the updated
-        rdocx object. Within the `fun` function, you may find the
-        following helpful:
-        -   Call `add_md()` to add normal paragraphs to the appendix
-            with markdown styling support (based on the default
-            paragraph style).
-        -   Call `add_code_file()` to add the contents of a source-code
-            file to the appendix (in Courier New, 10pt, single-spaced).
-    -   Call `apa_docx("input_file.docx", "output_file.docx")` which
-        will read the bookmark references from the input docx file and
-        generate the output docx file with the referenced tables,
-        figures, and appendices arranged in the right order.
-        -   As a short-hand notation, calling
-            `apa_docx(here = function() {})` from within an R script
-            named `paper.R` will automatically use `paper.docx` as the
-            input file and `paper.tfa.docx` as the output file.
-        -   A convenient approach is to create an R project per paper
-            and name the input files `paper.docx` and `paper.R` and the
-            output file will be `paper.tfa.docx`, which you will include
-            into `paper.docx`.
-        -   If you follow those conventions, then you can also use a
-            relative path name in the `IncludeText` field as follows:
-            `{ IncludeText "{ FileName \p }/../paper.tfa.docx" }`. Use
-            `Ctrl-F9` to insert the outer and inner braces (don’t type
-            them directly since they are special), and type the rest
-            verbatim.
+  - Call `get_styles() -> styles` to get a customizable styles list.
+  - Call `set_apa_defaults()` to set APA themes as the defaults for
+    flextables and ggplots.
+  - Call `init_tfas()` to initialize/reset the list of table, figure,
+    and appendix content.
+  - Call `add_styling(styles, df) -> styles` to add automatic styling
+    for column names and values in a data frame based on the class of
+    the column (factor, logical, numeric, string) or directly manipulate
+    the styles list to adjust styling as needed.
+  - Call `tibble(...) %>% flextable() %>% styler(styles)` to create an
+    APA styled flextable. Numeric columns will be center-aligned and
+    decimal aligned by default. The `styles` list will control other
+    styling options. The styling can also be touched-up using
+    `flextable` functions if needed.
+  - Short-cuts are available to create specially formatted analysis
+    result tables. For example: `aov(...) %>%   as_flextable_aov()`.
+  - Call
+    `add_table(x, bookmark, title, styles, notes = NULL,   wide = FALSE, ...)`
+    to add an APA styled flextable, `x`, as a bookmarked table with the
+    given `title`, `styles`, and `notes`. If the table is wide, use
+    `wide = TRUE` to display that table in landscape orientation. There
+    are functions available to assist with preparing the title and notes
+    args. The `bookmark` string must start with “t” (for table) and be
+    less than 40 characters long.
+  - Call `add_figure(fig, bookmark, title, styles, ...)` to add a ggplot
+    as a bookmarked figure with the given `title`, `styles`, and
+    `notes`. If the figure is wide, use `wide = TRUE` to display that
+    figure in landscape orientation. The `bookmark` string must start
+    with “f” (for figure) and be less than 40 characters long.
+  - Call `add_appendix(bookmark, fun, wide = FALSE)` to add a bookmarked
+    appendix. The bookmark string must start with “a” (for appendix) and
+    be less than 40 characters long. The `fun` function must accept an
+    rdocx object and use commands from the `officer` package to add
+    appendix content and return the updated rdocx object. Within the
+    `fun` function, you may find the following helpful:
+    - Call `add_md()` to add normal paragraphs to the appendix with
+      markdown styling support (based on the default paragraph style).
+    - Call `add_code_file()` to add the contents of a source-code file
+      to the appendix (in Courier New, 10pt, single-spaced).
+  - Call `apa_docx("input_file.docx", "output_file.docx")` which will
+    read the bookmark references from the input docx file and generate
+    the output docx file with the referenced tables, figures, and
+    appendices arranged in the right order.
+    - As a short-hand notation, calling `apa_docx(here = function() {})`
+      from within an R script named `paper.R` will automatically use
+      `paper.docx` as the input file and `paper.tfa.docx` as the output
+      file.
+    - A convenient approach is to create an R project per paper and name
+      the input files `paper.docx` and `paper.R` and the output file
+      will be `paper.tfa.docx`, which you will include into
+      `paper.docx`.
+    - If you follow those conventions, then you can also use a relative
+      path name in the `IncludeText` field as follows:
+      `{ IncludeText "{ FileName \p }/../paper.tfa.docx" }`. Use
+      `Ctrl-F9` to insert the outer and inner braces (don’t type them
+      directly since they are special), and type the rest verbatim.
 
--   Once the output file has been generated, open the input docx file,
-    and if the `IncludeText` field does not auto-update then press
-    `Ctrl-A` (to select all) once and press `F9` (to update all fields)
-    twice.
+- Once the output file has been generated, open the input docx file, and
+  if the `IncludeText` field does not auto-update then press `Ctrl-A`
+  (to select all) once and press `F9` (to update all fields) twice.
 
--   Use `Word > Insert > Cross Reference` to insert or remove references
-    to bookmarks defined in the included file. Regenerate the output
-    docx file after adding, removing, or re-ording bookmark references.
+- Use `Word > Insert > Cross Reference` to insert or remove references
+  to bookmarks defined in the included file. Regenerate the output docx
+  file after adding, removing, or re-ording bookmark references.
 
 The documentation for the functions can be opened with the command
 `help(package = "apatfa")`.
