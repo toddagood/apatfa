@@ -34,6 +34,7 @@
 #' @importFrom flextable autofit
 #' @importFrom flextable border_remove
 #' @importFrom flextable colformat_double
+#' @importFrom flextable colformat_int
 #' @importFrom flextable delete_part
 #' @importFrom flextable flextable
 #' @importFrom flextable font
@@ -60,7 +61,6 @@
 #' @importFrom ggplot2 annotation_custom
 #' @importFrom ggplot2 coord_fixed
 #' @importFrom ggplot2 element_blank
-#' @importFrom ggplot2 element_text
 #' @importFrom ggplot2 facet_grid
 #' @importFrom ggplot2 geom_abline
 #' @importFrom ggplot2 geom_boxplot
@@ -81,6 +81,7 @@
 #' @importFrom ggplot2 xlab
 #' @importFrom ggplot2 ylab
 #' @importFrom ggrepel geom_text_repel
+#' @importFrom ggtext element_markdown
 #' @importFrom graphics abline
 #' @importFrom grid rasterGrob
 #' @importFrom gtools capwords
@@ -125,6 +126,7 @@
 #' @importFrom tidyr everything
 #' @importFrom tidyr fill
 #' @importFrom tidyr unnest
+#' @importFrom tidyselect contains
 #' @importFrom utils flush.console
 #' @importFrom utils help
 apatfa_help <- function() {
@@ -260,13 +262,15 @@ set_apa_defaults <- function(digits = 2,
                                     ...)
   fig_theme <-
     ggplot2::theme_minimal(base_size = 12, base_family = "Arial") +
-    ggplot2::theme(axis.title = ggplot2::element_text(face = "bold.italic"),
+    ggplot2::theme(axis.title = ggtext::element_markdown(face = "bold.italic"),
+                   axis.title.x = ggtext::element_markdown(face = "bold.italic"),
+                   axis.title.y = ggtext::element_markdown(face = "bold.italic"),
                    panel.spacing = ggplot2::unit(12, "points"),
                    panel.border = ggplot2::element_rect(fill = NA),
                    legend.direction = "horizontal",
                    legend.position = "top",
                    legend.text = styles$mono,
-                   legend.title = styles$bold.italic,
+                   legend.title = ggtext::element_markdown(face = "bold.italic"),
                    strip.text = styles$mono) +
     fig_theme
   ggplot2::theme_set(fig_theme)
@@ -322,7 +326,7 @@ figure_adder <- function(x, obj, i) {
     # section heading.
     obj$height <- obj$height - obj$line.height
   }
-  png_file <- paste0(obj$img, ".png")
+  png_file <- sub(".svg", ".png", obj$img, fixed = TRUE)
   rsvg::rsvg_png(obj$img, png_file,
                  width = 300 * obj$width,
                  height = 300 * obj$height)
@@ -739,6 +743,7 @@ add_figure <- function(fig, bookmark, title, styles, ...) {
       afig$facet$params$page <- page
       title %>% paste(paste0("[Panel ", page, "]")) -> ptitle
       bookmark %>% paste0("P", page) -> pbookmark
+      print(afig)
       begin_figure(pbookmark, ptitle, styles, ...)
       print(afig)
       end_figure()
