@@ -20,7 +20,7 @@ License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.2
 Imports: 
     broom,
     dplyr,
@@ -32,6 +32,7 @@ Imports:
     ggforce,
     ggplot2,
     ggrepel,
+    ggtext,
     grDevices,
     gtools,
     magrittr,
@@ -46,6 +47,7 @@ Imports:
     stringr,
     tibble,
     tidyr,
+    tidyselect,
     tools,
     utils,
     xml2
